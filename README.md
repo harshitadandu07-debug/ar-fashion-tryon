@@ -21,3 +21,11 @@ This folder contains the project context + build scaffolding for:
 - Use the screen list + acceptance criteria: `docs/Screens-and-States.md`
 - Use the build plan + tech options: `docs/Technical-Plan.md`
 
+### Push to GitHub (no GitHub CLI required)
+1. In the browser, while signed in: [create a new empty repository](https://github.com/new) named `ar-fashion-tryon` (no README).
+2. In Terminal, from this folder, run:
+
+`./scripts/after-github-repo-created.sh YOUR_GITHUB_USERNAME`
+
+If Git asks for a password, use a [Personal Access Token](https://github.com/settings/tokens) with `repo` scope, not your GitHub account password.
+
