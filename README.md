@@ -1,25 +1,28 @@
-## AR Fashion Trend Discovery + Try-On (MVP)
+## Double Take — Web AR Fashion Try-On (MVP)
 
-This folder contains the project context + build scaffolding for:
-**AR Fashion Trend Discovery and Try-On Experience**.
+Build a **mobile-first WebAR experience** where a user scans a **poster** (or enters via **QR**), browses **Spring 2026** trend cards, taps a look, and enters a **live face try-on** to preview the look in real time — then **save/share**.
 
-### What this repo is (right now)
-- **Product + design context**: in `docs/` (problem, flows, screens, requirements)
-- **Asset placeholders**: in `assets/` (poster marker + outfit overlays)
-- **Engineering scaffold**: lightweight structure in `src/` (to be filled as we build)
+### Tech stack (locked for v1)
+- **Framework**: Next.js (App Router)
+- **UI**: React
+- **Styling**: Tailwind CSS
+- **Image tracking + face tracking**: MindAR
+- **Rendering**: three.js
+- **Data**: static JSON (`data/looks.json`)
+- **Deploy**: Vercel
 
-### MVP goal
-1. Scan a printed **fashion poster** (back camera)
-2. Show **spring trend cards** anchored to the poster
-3. Select a look → transition to **try-on** (front camera)
-4. Overlay selected outfit on user (upper-body focus for v1)
-5. Allow quick **save/share**
+### Definition of done (MVP)
+1. Open on mobile (URL or QR)
+2. Grant camera permission
+3. Scan poster (or skip via QR fallback)
+4. Browse swipeable trend cards
+5. Tap a look → live face try-on
+6. Save or share a screenshot
 
-### Where to start
-- Read the product spec: `docs/PRD.md`
-- Follow the end-to-end flow: `docs/User-Flow.md`
-- Use the screen list + acceptance criteria: `docs/Screens-and-States.md`
-- Use the build plan + tech options: `docs/Technical-Plan.md`
+### Docs
+- **Full context/spec**: `docs/CONTEXT.md`
+- **Implementation plan**: `docs/IMPLEMENTATION-PLAN.md`
+- **Architecture + state model**: `docs/ARCHITECTURE.md`
 
 ### Push to GitHub (no GitHub CLI required)
 1. In the browser, while signed in: [create a new empty repository](https://github.com/new) named `ar-fashion-tryon` (no README).
