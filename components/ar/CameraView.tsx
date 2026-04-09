@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ProductCard from "@/components/ui/ProductCard";
+import ProductCard, { type Product } from "@/components/ui/ProductCard";
+
+const PRODUCTS: Product[] = [
+  { id: 1, category: "Spring 2026", name: "Linen Trench Coat", description: "Beige — Oversized fit", price: "$320" },
+  { id: 2, category: "Spring 2026", name: "Silk Slip Dress", description: "Ivory — Bias cut", price: "$210" },
+  { id: 3, category: "Spring 2026", name: "Brooches Set", description: "Silver — Mixed metals", price: "$85" },
+  { id: 4, category: "Spring 2026", name: "Wide-Leg Trousers", description: "Stone — Relaxed fit", price: "$175" },
+  { id: 5, category: "Spring 2026", name: "Knit Cardigan", description: "Cream — Open weave", price: "$140" },
+];
 
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
@@ -51,7 +59,7 @@ export default function CameraView() {
 
   if (permission === "idle" || permission === "requesting") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-black px-6 text-white">
+      <div className="flex h-full flex-col items-center justify-center bg-black px-6 text-white">
         <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
           <svg
             className="h-9 w-9 text-white"
@@ -96,7 +104,7 @@ export default function CameraView() {
 
   if (permission === "denied") {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-black px-6 text-white">
+      <div className="flex h-full flex-col items-center justify-center bg-black px-6 text-white">
         <h2 className="mb-2 text-2xl font-semibold">Camera blocked</h2>
         <p className="mb-6 text-center text-sm text-white/60">
           Allow camera access in your browser settings and reload the page.
@@ -112,7 +120,7 @@ export default function CameraView() {
   }
 
   return (
-    <div className="relative min-h-dvh w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       {/* Camera feed */}
       <video
         ref={videoRef}
@@ -143,9 +151,15 @@ export default function CameraView() {
         </svg>
       </button>
 
-      {/* Product card */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-        <ProductCard />
+      {/* Product cards — horizontal scroll */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 pb-4">
+        <div className="flex gap-6 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+          {PRODUCTS.map((product) => (
+            <div key={product.id} className="snap-start">
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
