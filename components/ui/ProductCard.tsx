@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export type Product = {
   id: number;
   category: string;
@@ -11,12 +13,13 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="w-64 flex-shrink-0 rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/15">
       <div className="flex items-center gap-4">
-        <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-white/20 overflow-hidden">
+        <div className="relative h-20 w-20 flex-shrink-0 rounded-xl bg-white/20 overflow-hidden">
           {product.image ? (
-            <img
+            <Image
               src={product.image}
               alt={product.name}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-white/40 text-xs">
