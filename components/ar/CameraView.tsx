@@ -17,7 +17,7 @@ export default function CameraView() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [permission, setPermission] = useState<PermissionState>("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">(
-    "environment"
+    "user"
   );
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -60,41 +60,51 @@ export default function CameraView() {
   if (permission === "idle" || permission === "requesting") {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-black px-6 text-white">
-        <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
-          <svg
-            className="h-9 w-9 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-            />
-          </svg>
+        {/* Animated camera ring */}
+        <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
+          <div className="absolute inset-0 animate-ping rounded-full bg-white/10" />
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
+            <svg
+              className="h-10 w-10 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+              />
+            </svg>
+          </div>
         </div>
-        <h2 className="mb-2 text-2xl font-semibold">Camera access needed</h2>
-        <p className="mb-8 text-center text-sm text-white/60">
-          Double Take uses your camera to scan the poster and show try-on looks
-          in real time. Your camera feed never leaves your device.
+
+        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/40">
+          Double Take
         </p>
+        <h2 className="mb-3 text-2xl font-semibold">Enable your camera</h2>
+        <p className="mb-10 text-center text-sm leading-relaxed text-white/60">
+          We need camera access to show AR try-on looks live on your face.
+          Your feed never leaves your device.
+        </p>
+
         <button
           onClick={requestPermission}
           disabled={permission === "requesting"}
-          className="w-full max-w-xs rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-black disabled:opacity-50"
+          className="w-full max-w-xs rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-black transition-opacity disabled:opacity-50"
         >
           {permission === "requesting" ? "Starting camera…" : "Allow camera"}
         </button>
+
         <a
           href="/"
-          className="mt-4 text-sm text-white/40 underline underline-offset-4"
+          className="mt-5 text-sm text-white/40 underline underline-offset-4"
         >
           Go back
         </a>
