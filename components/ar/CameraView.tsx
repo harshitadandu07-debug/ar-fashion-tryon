@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useSwipeable } from "react-swipeable";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
@@ -17,8 +18,6 @@ const SEASON_DATA = {
   winter: winterData,
 };
 
-// card width (256px) + gap (24px) = 280px per scroll step
-const CARD_STEP = 280;
 
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
@@ -40,14 +39,17 @@ export default function CameraView() {
   const [permission, setPermission] = useState<PermissionState>("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">("user");
   const [gestureHint, setGestureHint] = useState<"left" | "right" | null>(null);
+  const [mpStatus, setMpStatus] = useState<string>("Waiting for MediaPipe…");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [overlayError, setOverlayError] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollCards = useCallback((direction: "left" | "right") => {
-    cardsRef.current?.scrollBy({
-      left: direction === "right" ? CARD_STEP : -CARD_STEP,
-      behavior: "smooth",
-    });
+    const container = cardsRef.current;
+    if (!container) return;
+    const step = container.offsetWidth;
+    container.scrollBy({ left: direction === "right" ? step : -step, behavior: "smooth" });
   }, []);
 
   const handleHandSwipe = useCallback(
@@ -60,7 +62,7 @@ export default function CameraView() {
     [scrollCards]
   );
 
-  useHandGesture(videoRef, handleHandSwipe);
+  useHandGesture(videoRef, handleHandSwipe, setMpStatus);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => scrollCards("right"),
@@ -99,6 +101,23 @@ export default function CameraView() {
     setFacingMode(next);
     await startCamera(next);
   }
+
+  // Track which card is centered by watching scroll position
+  useEffect(() => {
+    if (permission !== "granted") return;
+    const container = cardsRef.current;
+    if (!container) return;
+    function onScroll() {
+      if (!container) return;
+      const idx = Math.round(container.scrollLeft / container.offsetWidth);
+      setActiveIndex(Math.max(0, Math.min(idx, products.length - 1)));
+    }
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [permission, products.length]);
+
+  // Reset overlay error when product changes
+  useEffect(() => { setOverlayError(false); }, [activeIndex]);
 
   useEffect(() => {
     return () => {
@@ -190,6 +209,27 @@ export default function CameraView() {
         className="absolute inset-0 h-full w-full object-cover"
       />
 
+      {/* AR outfit overlay — positioned over the body area */}
+      {!overlayError && products[activeIndex]?.image && (
+        <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center">
+          <div className="relative h-[75%] w-[85%]">
+            <Image
+              key={products[activeIndex].image}
+              src={products[activeIndex].image!}
+              alt={products[activeIndex].name}
+              fill
+              className="object-contain mix-blend-multiply transition-opacity duration-300"
+              onError={() => setOverlayError(true)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* MediaPipe debug status */}
+      <div className="absolute left-4 top-4 z-10 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm max-w-[60vw] truncate">
+        {mpStatus}
+      </div>
+
       {/* Flip camera button */}
       <button
         onClick={toggleCamera}
@@ -222,14 +262,32 @@ export default function CameraView() {
           </div>
         )}
 
-        {/* Swipeable + scrollable cards container */}
-        <div {...swipeHandlers}>
+        {/* Arrow nav buttons */}
+        <div className="mb-2 flex items-center justify-between px-4">
+          <button
+            onClick={() => scrollCards("left")}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+            aria-label="Previous"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => scrollCards("right")}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+            aria-label="Next"
+          >
+            ›
+          </button>
+        </div>
+
+        {/* Swipeable wrapper + scrollable cards container */}
+        <div {...swipeHandlers} className="w-full">
           <div
             ref={cardsRef}
-            className="flex gap-6 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+            className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
           >
             {products.map((product) => (
-              <div key={product.id} className="snap-start">
+              <div key={product.id} className="w-full flex-shrink-0 snap-center flex justify-center px-6">
                 <ProductCard product={product} />
               </div>
             ))}

@@ -38,9 +38,6 @@ export default function ProductCard({ product }: { product: Product }) {
           <p className="mt-1 text-base font-semibold text-white">{product.price}</p>
         </div>
       </div>
-      <button className="mt-3 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black">
-        Try this look
-      </button>
     </div>
   );
 }
