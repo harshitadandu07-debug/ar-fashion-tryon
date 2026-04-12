@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useSwipeable } from "react-swipeable";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
-import { useHandGesture } from "@/components/ar/useHandGesture";
 import { useBodyPose } from "@/components/ar/useBodyPose";
 import springData from "@/data/seasons/spring.json";
 import summerData from "@/data/seasons/summer.json";
@@ -63,8 +62,7 @@ export default function CameraView() {
     [scrollCards]
   );
 
-  useHandGesture(videoRef, handleHandSwipe, setMpStatus);
-  const torso = useBodyPose(videoRef);
+  const torso = useBodyPose(videoRef, handleHandSwipe, setMpStatus);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => scrollCards("right"),

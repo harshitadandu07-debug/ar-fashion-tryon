@@ -14,14 +14,26 @@ export type TorsoBox = {
 // MediaPipe Pose landmark indices
 const L_SHOULDER = 11;
 const R_SHOULDER = 12;
-const L_HIP = 23;
-const R_HIP = 24;
+const L_HIP      = 23;
+const R_HIP      = 24;
+const R_WRIST    = 16; // use right wrist for gesture detection
+
+// Swipe detection constants
+const DELTA_THRESHOLD = 0.10;
+const TIME_WINDOW_MS  = 600;
+const COOLDOWN_MS     = 800;
+const EMA_ALPHA       = 0.4;
 
 export function useBodyPose(
-  videoRef: React.RefObject<HTMLVideoElement | null>
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  onSwipe?: (direction: "left" | "right") => void,
+  onStatus?: (status: string) => void,
 ): TorsoBox | null {
   const [torso, setTorso] = useState<TorsoBox | null>(null);
-  const torsoRef = useRef<TorsoBox | null>(null);
+  const onSwipeRef = useRef(onSwipe);
+  const onStatusRef = useRef(onStatus);
+  useEffect(() => { onSwipeRef.current = onSwipe; }, [onSwipe]);
+  useEffect(() => { onStatusRef.current = onStatus; }, [onStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -29,6 +41,14 @@ export function useBodyPose(
     let rafId = 0;
     let pose: any = null;
     let processing = false;
+
+    // Swipe state
+    let startX: number | null = null;
+    let startTime = 0;
+    let smoothX: number | null = null;
+    let cooldownUntil = 0;
+
+    function report(msg: string) { onStatusRef.current?.(msg); }
 
     function processFrame() {
       const video = videoRef.current;
@@ -59,43 +79,83 @@ export function useBodyPose(
       pose.onResults((results: any) => {
         processing = false;
         const lm = results.poseLandmarks;
-        if (!lm) { setTorso(null); torsoRef.current = null; return; }
 
+        if (!lm) {
+          setTorso(null);
+          startX = null;
+          smoothX = null;
+          return;
+        }
+
+        // ── Torso overlay box ──────────────────────────────────────
         const ls = lm[L_SHOULDER];
         const rs = lm[R_SHOULDER];
         const lh = lm[L_HIP];
         const rh = lm[R_HIP];
 
-        if (!ls || !rs || !lh || !rh) return;
+        if (ls && rs && lh && rh) {
+          const shoulderSpan = Math.abs(ls.x - rs.x);
+          const midX         = (ls.x + rs.x) / 2;
+          const shoulderY    = Math.min(ls.y, rs.y);
+          const hipY         = (lh.y + rh.y) / 2;
+          const clothingW    = shoulderSpan * 2.5;
+          const clothingH    = (hipY - shoulderY) * 1.8;
 
-        // Shoulder midpoint and span
-        const shoulderSpan = Math.abs(ls.x - rs.x);
-        const midX = (ls.x + rs.x) / 2;
-        const shoulderY = Math.min(ls.y, rs.y);
-        const hipY = (lh.y + rh.y) / 2;
+          setTorso({
+            x: midX - clothingW / 2,
+            y: shoulderY - shoulderSpan * 0.3,
+            width: clothingW,
+            height: clothingH,
+          });
+        }
 
-        // Scale clothing to be ~2.5x the shoulder span wide,
-        // tall enough to cover shoulder-to-hip + a bit below
-        const clothingWidth = shoulderSpan * 2.5;
-        const clothingHeight = (hipY - shoulderY) * 1.8;
+        // ── Wrist swipe gesture ────────────────────────────────────
+        const wrist = lm[R_WRIST];
+        if (!wrist) return;
 
-        const box: TorsoBox = {
-          x: midX - clothingWidth / 2,
-          y: shoulderY - shoulderSpan * 0.3, // start slightly above shoulders
-          width: clothingWidth,
-          height: clothingHeight,
-        };
+        const rawX = wrist.x;
+        const now  = Date.now();
 
-        torsoRef.current = box;
-        setTorso({ ...box });
+        if (now < cooldownUntil) return;
+
+        smoothX = smoothX === null
+          ? rawX
+          : EMA_ALPHA * rawX + (1 - EMA_ALPHA) * smoothX;
+
+        if (startX === null) {
+          startX    = smoothX;
+          startTime = now;
+          report("Body detected — swipe left or right!");
+          return;
+        }
+
+        const elapsed = now - startTime;
+        if (elapsed > TIME_WINDOW_MS) {
+          startX    = smoothX;
+          startTime = now;
+          return;
+        }
+
+        const delta = smoothX! - startX;
+        if (Math.abs(delta) > DELTA_THRESHOLD) {
+          // selfieMode: x increases = user moved left; decreases = user moved right
+          const direction: "left" | "right" = delta > 0 ? "left" : "right";
+          onSwipeRef.current?.(direction);
+          cooldownUntil = now + COOLDOWN_MS;
+          startX  = null;
+          smoothX = null;
+          report(`Swiped ${direction}!`);
+        }
       });
 
       rafId = requestAnimationFrame(processFrame);
+      report("Pose loaded — step back so your body is visible");
     }
 
     if ((window as any).Pose) {
       init();
     } else {
+      report("Waiting for MediaPipe Pose…");
       const interval = setInterval(() => {
         if ((window as any).Pose) {
           clearInterval(interval);
