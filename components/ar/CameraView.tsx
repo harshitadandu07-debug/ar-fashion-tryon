@@ -62,7 +62,7 @@ export default function CameraView() {
     gestureTimerRef.current = setTimeout(() => setGestureHint(null), 600);
   }, [scrollCards]);
 
-  const torso = useBodyPose(videoRef, handleHandSwipe, setMpStatus);
+  const { torso, segMaskRef } = useBodyPose(videoRef, handleHandSwipe, setMpStatus);
 
   // Keep torsoRef in sync
   useEffect(() => { torsoRef.current = torso; }, [torso]);
@@ -120,33 +120,64 @@ export default function CameraView() {
 
     let rafId: number;
 
+    // Offscreen canvas for person cutout (reused each frame)
+    const personCanvas = document.createElement("canvas");
+
     function render() {
       if (!canvas || !video) return;
 
       if (video.readyState >= 2 && video.videoWidth > 0) {
-        canvas.width  = video.videoWidth;
-        canvas.height = video.videoHeight;
+        const W = video.videoWidth;
+        const H = video.videoHeight;
+        canvas.width  = W;
+        canvas.height = H;
 
         const ctx = canvas.getContext("2d")!;
 
-        // Draw mirrored video frame (front camera selfie view)
+        // ── Layer 1: mirrored video background ──────────────────────
         ctx.save();
-        ctx.translate(canvas.width, 0);
+        ctx.translate(W, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, W, H);
         ctx.restore();
 
-        // Draw garment with multiply blend — white bg disappears, fabric stays
+        // ── Layer 2: garment ─────────────────────────────────────────
         const img   = garmentImgRef.current;
         const torso = torsoRef.current;
         if (img && torso) {
-          const x = torso.x * canvas.width;
-          const y = torso.y * canvas.height;
-          const w = torso.width  * canvas.width;
-          const h = torso.height * canvas.height;
+          ctx.drawImage(
+            img,
+            torso.x * W,
+            torso.y * H,
+            torso.width  * W,
+            torso.height * H,
+          );
+        }
 
-          ctx.globalCompositeOperation = "source-over";
-          ctx.drawImage(img, x, y, w, h);
+        // ── Layer 3: person pixels on top (from segmentation mask) ───
+        // This makes arms/hands appear IN FRONT of the garment so it
+        // looks like the person is actually wearing it.
+        const segMask = segMaskRef.current;
+        if (segMask) {
+          personCanvas.width  = W;
+          personCanvas.height = H;
+          const pCtx = personCanvas.getContext("2d")!;
+          pCtx.clearRect(0, 0, W, H);
+
+          // Draw the segmentation mask (white=person, black=background)
+          pCtx.drawImage(segMask, 0, 0, W, H);
+
+          // Keep only person pixels from the video (mask acts as alpha)
+          pCtx.globalCompositeOperation = "source-in";
+          pCtx.save();
+          pCtx.translate(W, 0);
+          pCtx.scale(-1, 1);
+          pCtx.drawImage(video, 0, 0, W, H);
+          pCtx.restore();
+          pCtx.globalCompositeOperation = "source-over";
+
+          // Composite person on top of garment
+          ctx.drawImage(personCanvas, 0, 0);
         }
       }
 

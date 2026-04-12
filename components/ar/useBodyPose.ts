@@ -11,6 +11,11 @@ export type TorsoBox = {
   height: number; // 0–1
 };
 
+export type BodyPoseResult = {
+  torso: TorsoBox | null;
+  segMaskRef: React.RefObject<CanvasImageSource | null>;
+};
+
 // MediaPipe Pose landmark indices
 const L_SHOULDER = 11;
 const R_SHOULDER = 12;
@@ -18,7 +23,7 @@ const L_ELBOW    = 13;
 const R_ELBOW    = 14;
 const L_HIP      = 23;
 const R_HIP      = 24;
-const R_WRIST    = 16; // use right wrist for gesture detection
+const R_WRIST    = 16;
 
 // Swipe detection constants
 const DELTA_THRESHOLD = 0.18;
@@ -30,11 +35,12 @@ export function useBodyPose(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   onSwipe?: (direction: "left" | "right") => void,
   onStatus?: (status: string) => void,
-): TorsoBox | null {
+): BodyPoseResult {
   const [torso, setTorso] = useState<TorsoBox | null>(null);
-  const onSwipeRef = useRef(onSwipe);
+  const segMaskRef = useRef<CanvasImageSource | null>(null);
+  const onSwipeRef  = useRef(onSwipe);
   const onStatusRef = useRef(onStatus);
-  useEffect(() => { onSwipeRef.current = onSwipe; }, [onSwipe]);
+  useEffect(() => { onSwipeRef.current  = onSwipe;  }, [onSwipe]);
   useEffect(() => { onStatusRef.current = onStatus; }, [onStatus]);
 
   useEffect(() => {
@@ -44,7 +50,6 @@ export function useBodyPose(
     let pose: any = null;
     let processing = false;
 
-    // Swipe state
     let startX: number | null = null;
     let startTime = 0;
     let smoothX: number | null = null;
@@ -73,6 +78,8 @@ export function useBodyPose(
       pose.setOptions({
         modelComplexity: 0,
         smoothLandmarks: true,
+        enableSegmentation: true,
+        smoothSegmentation: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
         selfieMode: true,
@@ -80,8 +87,13 @@ export function useBodyPose(
 
       pose.onResults((results: any) => {
         processing = false;
-        const lm = results.poseLandmarks;
 
+        // Store segmentation mask for the canvas renderer
+        if (results.segmentationMask) {
+          segMaskRef.current = results.segmentationMask as CanvasImageSource;
+        }
+
+        const lm = results.poseLandmarks;
         if (!lm) {
           setTorso(null);
           startX = null;
@@ -94,7 +106,6 @@ export function useBodyPose(
         const rs = lm[R_SHOULDER];
         const lh = lm[L_HIP];
         const rh = lm[R_HIP];
-
         const le = lm[L_ELBOW];
         const re = lm[R_ELBOW];
 
@@ -104,24 +115,17 @@ export function useBodyPose(
           const shoulderY    = Math.min(ls.y, rs.y);
           const hipY         = (lh.y + rh.y) / 2;
 
-          // Use elbow x positions to measure outer body width when arms are relaxed at sides.
-          // Fall back to 1.8x shoulder span if elbows aren't visible.
           let outerWidth = shoulderSpan * 1.8;
           if (le && re) {
             const elbowSpan = Math.abs(le.x - re.x);
-            // Take the wider of elbow span or shoulder span, plus small padding for coat drape
             outerWidth = Math.max(elbowSpan, shoulderSpan) * 1.15;
           }
 
-          const clothingW = outerWidth;
-          // Height: from collar down to mid-thigh
-          const clothingH = (hipY - shoulderY) * 2.5;
-
           setTorso({
-            x: midX - clothingW / 2,
-            y: shoulderY - shoulderSpan * 0.15, // collar sits just above shoulders
-            width: clothingW,
-            height: clothingH,
+            x: midX - outerWidth / 2,
+            y: shoulderY - shoulderSpan * 0.15,
+            width: outerWidth,
+            height: (hipY - shoulderY) * 2.5,
           });
         }
 
@@ -154,7 +158,6 @@ export function useBodyPose(
 
         const delta = smoothX! - startX;
         if (Math.abs(delta) > DELTA_THRESHOLD) {
-          // selfieMode: x increases = user moved left; decreases = user moved right
           const direction: "left" | "right" = delta > 0 ? "left" : "right";
           onSwipeRef.current?.(direction);
           cooldownUntil = now + COOLDOWN_MS;
@@ -193,5 +196,5 @@ export function useBodyPose(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return torso;
+  return { torso, segMaskRef };
 }
