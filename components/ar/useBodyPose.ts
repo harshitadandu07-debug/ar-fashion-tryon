@@ -99,8 +99,8 @@ export function useBodyPose(
           // Anchor top of garment at the neck/collar (slightly above shoulders)
           const shoulderY    = Math.min(ls.y, rs.y);
           const hipY         = (lh.y + rh.y) / 2;
-          // Width: matches shoulder width closely so coat looks worn, not draped
-          const clothingW    = shoulderSpan * 2.0;
+          // Width: just slightly beyond shoulder joints (coat sits on shoulders)
+          const clothingW    = shoulderSpan * 1.2;
           // Height: from collar down to mid-thigh (2.5x shoulder-to-hip distance)
           const clothingH    = (hipY - shoulderY) * 2.5;
 
