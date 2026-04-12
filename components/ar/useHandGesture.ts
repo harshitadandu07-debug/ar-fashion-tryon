@@ -49,6 +49,7 @@ export function useHandGesture(
         modelComplexity: 0,
         minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.5,
+        selfieMode: true,
       });
 
       hands.onResults((results: any) => {

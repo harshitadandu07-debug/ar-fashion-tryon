@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSwipeable } from "react-swipeable";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
+import { useHandGesture } from "@/components/ar/useHandGesture";
 import springData from "@/data/seasons/spring.json";
 import summerData from "@/data/seasons/summer.json";
 import fallData from "@/data/seasons/fall.json";
@@ -14,6 +16,9 @@ const SEASON_DATA = {
   fall: fallData,
   winter: winterData,
 };
+
+// card width (256px) + gap (24px) = 280px per scroll step
+const CARD_STEP = 280;
 
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
@@ -31,11 +36,39 @@ export default function CameraView() {
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
   const [permission, setPermission] = useState<PermissionState>("idle");
-  const [facingMode, setFacingMode] = useState<"environment" | "user">(
-    "user"
-  );
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("user");
+  const [gestureHint, setGestureHint] = useState<"left" | "right" | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scrollCards = useCallback((direction: "left" | "right") => {
+    cardsRef.current?.scrollBy({
+      left: direction === "right" ? CARD_STEP : -CARD_STEP,
+      behavior: "smooth",
+    });
+  }, []);
+
+  const handleHandSwipe = useCallback(
+    (direction: "left" | "right") => {
+      scrollCards(direction);
+      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+      setGestureHint(direction);
+      gestureTimerRef.current = setTimeout(() => setGestureHint(null), 600);
+    },
+    [scrollCards]
+  );
+
+  useHandGesture(videoRef, handleHandSwipe);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => scrollCards("right"),
+    onSwipedRight: () => scrollCards("left"),
+    delta: 30,
+    preventScrollOnSwipe: true,
+    trackTouch: true,
+  });
 
   async function startCamera(facing: "environment" | "user") {
     if (streamRef.current) {
@@ -70,6 +103,7 @@ export default function CameraView() {
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
     };
   }, []);
 
@@ -177,14 +211,29 @@ export default function CameraView() {
         </svg>
       </button>
 
-      {/* Product cards — horizontal scroll */}
+      {/* Product cards — horizontal scroll with touch + gesture support */}
       <div className="absolute bottom-0 left-0 right-0 z-10 pb-4">
-        <div className="flex gap-6 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
-          {products.map((product) => (
-            <div key={product.id} className="snap-start">
-              <ProductCard product={product} />
-            </div>
-          ))}
+        {/* Gesture indicator — shown only on hand swipe */}
+        {gestureHint && (
+          <div className="mb-2 flex justify-center">
+            <span className="rounded-full bg-white/20 px-3 py-1 text-xs text-white backdrop-blur-sm">
+              {gestureHint === "left" ? "← Swipe" : "Swipe →"}
+            </span>
+          </div>
+        )}
+
+        {/* Swipeable + scrollable cards container */}
+        <div {...swipeHandlers}>
+          <div
+            ref={cardsRef}
+            className="flex gap-6 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+          >
+            {products.map((product) => (
+              <div key={product.id} className="snap-start">
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
