@@ -14,6 +14,8 @@ export type TorsoBox = {
 // MediaPipe Pose landmark indices
 const L_SHOULDER = 11;
 const R_SHOULDER = 12;
+const L_ELBOW    = 13;
+const R_ELBOW    = 14;
 const L_HIP      = 23;
 const R_HIP      = 24;
 const R_WRIST    = 16; // use right wrist for gesture detection
@@ -93,16 +95,27 @@ export function useBodyPose(
         const lh = lm[L_HIP];
         const rh = lm[R_HIP];
 
+        const le = lm[L_ELBOW];
+        const re = lm[R_ELBOW];
+
         if (ls && rs && lh && rh) {
           const shoulderSpan = Math.abs(ls.x - rs.x);
           const midX         = (ls.x + rs.x) / 2;
-          // Anchor top of garment at the neck/collar (slightly above shoulders)
           const shoulderY    = Math.min(ls.y, rs.y);
           const hipY         = (lh.y + rh.y) / 2;
-          // Width: just slightly beyond shoulder joints (coat sits on shoulders)
-          const clothingW    = shoulderSpan * 1.2;
-          // Height: from collar down to mid-thigh (2.5x shoulder-to-hip distance)
-          const clothingH    = (hipY - shoulderY) * 2.5;
+
+          // Use elbow x positions to measure outer body width when arms are relaxed at sides.
+          // Fall back to 1.8x shoulder span if elbows aren't visible.
+          let outerWidth = shoulderSpan * 1.8;
+          if (le && re) {
+            const elbowSpan = Math.abs(le.x - re.x);
+            // Take the wider of elbow span or shoulder span, plus small padding for coat drape
+            outerWidth = Math.max(elbowSpan, shoulderSpan) * 1.15;
+          }
+
+          const clothingW = outerWidth;
+          // Height: from collar down to mid-thigh
+          const clothingH = (hipY - shoulderY) * 2.5;
 
           setTorso({
             x: midX - clothingW / 2,
