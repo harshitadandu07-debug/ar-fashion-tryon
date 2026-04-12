@@ -75,15 +75,39 @@ export default function CameraView() {
     trackTouch: true,
   });
 
-  // Load garment image whenever active product changes
+  // Load garment image and strip white background into an offscreen canvas
   useEffect(() => {
     activeIndexRef.current = activeIndex;
     const src = products[activeIndex]?.image;
     if (!src) { garmentImgRef.current = null; return; }
+
     const img = new window.Image();
     img.crossOrigin = "anonymous";
-    img.onload  = () => { garmentImgRef.current = img; };
     img.onerror = () => { garmentImgRef.current = null; };
+    img.onload = () => {
+      // Draw to offscreen canvas and remove near-white pixels
+      const off = document.createElement("canvas");
+      off.width  = img.naturalWidth;
+      off.height = img.naturalHeight;
+      const ctx = off.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+
+      const id   = ctx.getImageData(0, 0, off.width, off.height);
+      const data = id.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const brightness = (r + g + b) / 3;
+        if (brightness > 240) {
+          data[i + 3] = 0; // fully transparent
+        } else if (brightness > 210) {
+          // smooth edges near white
+          data[i + 3] = Math.round(((255 - brightness) / 45) * 255);
+        }
+      }
+      ctx.putImageData(id, 0, 0);
+      // Store the processed canvas as the drawable source
+      garmentImgRef.current = off as unknown as HTMLImageElement;
+    };
     img.src = src;
   }, [activeIndex, products]);
 
@@ -121,9 +145,8 @@ export default function CameraView() {
           const w = torso.width  * canvas.width;
           const h = torso.height * canvas.height;
 
-          ctx.globalCompositeOperation = "multiply";
-          ctx.drawImage(img, x, y, w, h);
           ctx.globalCompositeOperation = "source-over";
+          ctx.drawImage(img, x, y, w, h);
         }
       }
 

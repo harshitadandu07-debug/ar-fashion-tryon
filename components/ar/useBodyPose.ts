@@ -19,10 +19,10 @@ const R_HIP      = 24;
 const R_WRIST    = 16; // use right wrist for gesture detection
 
 // Swipe detection constants
-const DELTA_THRESHOLD = 0.10;
-const TIME_WINDOW_MS  = 600;
-const COOLDOWN_MS     = 800;
-const EMA_ALPHA       = 0.4;
+const DELTA_THRESHOLD = 0.18;
+const TIME_WINDOW_MS  = 500;
+const COOLDOWN_MS     = 1200;
+const EMA_ALPHA       = 0.25;
 
 export function useBodyPose(
   videoRef: React.RefObject<HTMLVideoElement | null>,
