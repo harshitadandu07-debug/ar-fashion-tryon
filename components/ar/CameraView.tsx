@@ -218,7 +218,7 @@ export default function CameraView() {
               src={products[activeIndex].image!}
               alt={products[activeIndex].name}
               fill
-              className="object-contain mix-blend-multiply transition-opacity duration-300"
+              className="object-contain opacity-90 transition-opacity duration-300"
               onError={() => setOverlayError(true)}
             />
           </div>
