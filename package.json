@@ -2,12 +2,15 @@
   "name": "double-take",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-images": "tsx scripts/generate-images.ts"
+    "generate-images": "tsx scripts/generate-images.ts",
+    "webar:dev": "npm run dev --prefix webar",
+    "webar:build": "npm run build --prefix webar"
   },
   "dependencies": {
     "agentation": "^3.0.2",
