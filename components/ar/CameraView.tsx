@@ -6,6 +6,7 @@ import { useSwipeable } from "react-swipeable";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
 import { useHandGesture } from "@/components/ar/useHandGesture";
+import { useBodyPose } from "@/components/ar/useBodyPose";
 import springData from "@/data/seasons/spring.json";
 import summerData from "@/data/seasons/summer.json";
 import fallData from "@/data/seasons/fall.json";
@@ -63,6 +64,7 @@ export default function CameraView() {
   );
 
   useHandGesture(videoRef, handleHandSwipe, setMpStatus);
+  const torso = useBodyPose(videoRef);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => scrollCards("right"),
@@ -209,19 +211,25 @@ export default function CameraView() {
         className="absolute inset-0 h-full w-full object-cover"
       />
 
-      {/* AR outfit overlay — positioned over the body area */}
-      {!overlayError && products[activeIndex]?.image && (
-        <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center">
-          <div className="relative h-[75%] w-[85%]">
-            <Image
-              key={products[activeIndex].image}
-              src={products[activeIndex].image!}
-              alt={products[activeIndex].name}
-              fill
-              className="object-contain opacity-90 transition-opacity duration-300"
-              onError={() => setOverlayError(true)}
-            />
-          </div>
+      {/* AR outfit overlay — tracks body via MediaPipe Pose */}
+      {!overlayError && products[activeIndex]?.image && torso && (
+        <div
+          className="pointer-events-none absolute z-[5]"
+          style={{
+            left: `${torso.x * 100}%`,
+            top: `${torso.y * 100}%`,
+            width: `${torso.width * 100}%`,
+            height: `${torso.height * 100}%`,
+          }}
+        >
+          <Image
+            key={products[activeIndex].image}
+            src={products[activeIndex].image!}
+            alt={products[activeIndex].name}
+            fill
+            className="object-contain opacity-95"
+            onError={() => setOverlayError(true)}
+          />
         </div>
       )}
 

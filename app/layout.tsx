@@ -39,6 +39,10 @@ export default function RootLayout({
           src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
           strategy="beforeInteractive"
         />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );
