@@ -2,14 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
+import { getCurrentSeason } from "@/lib/season";
+import springData from "@/data/seasons/spring.json";
+import summerData from "@/data/seasons/summer.json";
+import fallData from "@/data/seasons/fall.json";
+import winterData from "@/data/seasons/winter.json";
 
-const PRODUCTS: Product[] = [
-  { id: 1, category: "Spring 2026", name: "Linen Trench Coat", description: "Beige — Oversized fit", price: "$320" },
-  { id: 2, category: "Spring 2026", name: "Silk Slip Dress", description: "Ivory — Bias cut", price: "$210" },
-  { id: 3, category: "Spring 2026", name: "Brooches Set", description: "Silver — Mixed metals", price: "$85" },
-  { id: 4, category: "Spring 2026", name: "Wide-Leg Trousers", description: "Stone — Relaxed fit", price: "$175" },
-  { id: 5, category: "Spring 2026", name: "Knit Cardigan", description: "Cream — Open weave", price: "$140" },
-];
+const SEASON_DATA = {
+  spring: springData,
+  summer: summerData,
+  fall: fallData,
+  winter: winterData,
+};
+
+const currentSeasonData = SEASON_DATA[getCurrentSeason()];
+
+const PRODUCTS: Product[] = currentSeasonData.trends.map((t) => ({
+  id: t.id,
+  category: t.category,
+  name: t.name,
+  description: t.description,
+  price: t.price,
+  image: t.imagePath,
+}));
 
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
