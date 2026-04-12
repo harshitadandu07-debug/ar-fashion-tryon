@@ -1,0 +1,51 @@
+{
+  "season": "summer",
+  "year": 2026,
+  "trends": [
+    {
+      "id": 1,
+      "category": "Summer 2026",
+      "name": "Linen Co-ord Set",
+      "description": "Sand — Relaxed fit",
+      "price": "$245",
+      "imagePrompt": "editorial fashion photography, sand linen co-ord matching set, bright summer light, clean minimal background, high quality",
+      "imagePath": "/seasons/summer/linen-coord-set.jpg"
+    },
+    {
+      "id": 2,
+      "category": "Summer 2026",
+      "name": "Crochet Mini Dress",
+      "description": "White — Handmade texture",
+      "price": "$190",
+      "imagePrompt": "editorial fashion photography, white crochet mini dress handmade texture, summer daylight, clean minimal background, high quality",
+      "imagePath": "/seasons/summer/crochet-mini-dress.jpg"
+    },
+    {
+      "id": 3,
+      "category": "Summer 2026",
+      "name": "Raffia Tote",
+      "description": "Natural — Woven",
+      "price": "$95",
+      "imagePrompt": "editorial fashion photography, natural raffia woven tote bag, summer light, clean minimal background, high quality",
+      "imagePath": "/seasons/summer/raffia-tote.jpg"
+    },
+    {
+      "id": 4,
+      "category": "Summer 2026",
+      "name": "Slip Skirt",
+      "description": "Sage — Midi length",
+      "price": "$155",
+      "imagePrompt": "editorial fashion photography, sage green midi slip skirt, summer natural light, clean minimal background, high quality",
+      "imagePath": "/seasons/summer/slip-skirt.jpg"
+    },
+    {
+      "id": 5,
+      "category": "Summer 2026",
+      "name": "Strappy Sandals",
+      "description": "Tan — Leather",
+      "price": "$210",
+      "imagePrompt": "editorial fashion photography, tan leather strappy sandals, summer light, clean white background, high quality",
+      "imagePath": "/seasons/summer/strappy-sandals.jpg"
+    }
+  ]
+}

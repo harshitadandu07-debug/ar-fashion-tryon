@@ -1,0 +1,51 @@
+{
+  "season": "winter",
+  "year": 2026,
+  "trends": [
+    {
+      "id": 1,
+      "category": "Winter 2026",
+      "name": "Wool Overcoat",
+      "description": "Charcoal — Double breasted",
+      "price": "$620",
+      "imagePrompt": "editorial fashion photography, charcoal double breasted wool overcoat, winter light, clean minimal background, high quality",
+      "imagePath": "/seasons/winter/wool-overcoat.jpg"
+    },
+    {
+      "id": 2,
+      "category": "Winter 2026",
+      "name": "Cashmere Turtleneck",
+      "description": "Ivory — Slim fit",
+      "price": "$290",
+      "imagePrompt": "editorial fashion photography, ivory cashmere slim fit turtleneck sweater, winter soft light, clean minimal background, high quality",
+      "imagePath": "/seasons/winter/cashmere-turtleneck.jpg"
+    },
+    {
+      "id": 3,
+      "category": "Winter 2026",
+      "name": "Faux Fur Stole",
+      "description": "Cream — Draped",
+      "price": "$175",
+      "imagePrompt": "editorial fashion photography, cream faux fur draped stole, winter elegant light, clean minimal background, high quality",
+      "imagePath": "/seasons/winter/faux-fur-stole.jpg"
+    },
+    {
+      "id": 4,
+      "category": "Winter 2026",
+      "name": "Knee-High Boots",
+      "description": "Black — Leather",
+      "price": "$490",
+      "imagePrompt": "editorial fashion photography, black leather knee-high boots, winter light, clean white background, high quality",
+      "imagePath": "/seasons/winter/knee-high-boots.jpg"
+    },
+    {
+      "id": 5,
+      "category": "Winter 2026",
+      "name": "Velvet Blazer",
+      "description": "Deep Burgundy — Tailored",
+      "price": "$385",
+      "imagePrompt": "editorial fashion photography, deep burgundy velvet tailored blazer, winter rich light, clean minimal background, high quality",
+      "imagePath": "/seasons/winter/velvet-blazer.jpg"
+    }
+  ]
+}

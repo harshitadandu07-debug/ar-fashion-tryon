@@ -1,0 +1,51 @@
+{
+  "season": "fall",
+  "year": 2026,
+  "trends": [
+    {
+      "id": 1,
+      "category": "Fall 2026",
+      "name": "Leather Blazer",
+      "description": "Cognac — Structured fit",
+      "price": "$480",
+      "imagePrompt": "editorial fashion photography, cognac leather blazer structured fit, autumn warm light, clean minimal background, high quality",
+      "imagePath": "/seasons/fall/leather-blazer.jpg"
+    },
+    {
+      "id": 2,
+      "category": "Fall 2026",
+      "name": "Chunky Knit Sweater",
+      "description": "Camel — Oversized",
+      "price": "$220",
+      "imagePrompt": "editorial fashion photography, camel chunky knit oversized sweater, autumn light, clean minimal background, high quality",
+      "imagePath": "/seasons/fall/chunky-knit-sweater.jpg"
+    },
+    {
+      "id": 3,
+      "category": "Fall 2026",
+      "name": "Pleated Midi Skirt",
+      "description": "Rust — Satin",
+      "price": "$195",
+      "imagePrompt": "editorial fashion photography, rust satin pleated midi skirt, autumn warm tones, clean minimal background, high quality",
+      "imagePath": "/seasons/fall/pleated-midi-skirt.jpg"
+    },
+    {
+      "id": 4,
+      "category": "Fall 2026",
+      "name": "Suede Loafers",
+      "description": "Chocolate — Block heel",
+      "price": "$310",
+      "imagePrompt": "editorial fashion photography, chocolate suede block heel loafers, autumn light, clean white background, high quality",
+      "imagePath": "/seasons/fall/suede-loafers.jpg"
+    },
+    {
+      "id": 5,
+      "category": "Fall 2026",
+      "name": "Wool Scarf",
+      "description": "Plaid — Oversized",
+      "price": "$120",
+      "imagePrompt": "editorial fashion photography, oversized plaid wool scarf draped elegantly, autumn warm light, clean minimal background, high quality",
+      "imagePath": "/seasons/fall/wool-scarf.jpg"
+    }
+  ]
+}
