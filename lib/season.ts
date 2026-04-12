@@ -1,7 +1,6 @@
 export type Season = "spring" | "summer" | "fall" | "winter";
 
-export function getCurrentSeason(): Season {
-  const now = new Date();
+export function getCurrentSeason(now: Date = new Date()): Season {
   const month = now.getMonth() + 1; // 1–12
   const day = now.getDate();
 
