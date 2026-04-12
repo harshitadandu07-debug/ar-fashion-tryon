@@ -120,8 +120,9 @@ export default function CameraView() {
 
     let rafId: number;
 
-    // Offscreen canvas for person cutout (reused each frame)
+    // Offscreen canvases reused each frame
     const personCanvas = document.createElement("canvas");
+    const maskCanvas   = document.createElement("canvas");
 
     function render() {
       if (!canvas || !video) return;
@@ -154,29 +155,39 @@ export default function CameraView() {
           );
         }
 
-        // ── Layer 3: person pixels on top (from segmentation mask) ───
-        // This makes arms/hands appear IN FRONT of the garment so it
-        // looks like the person is actually wearing it.
+        // ── Layer 3: person pixels on top ────────────────────────────
+        // MediaPipe segmentation mask stores person confidence as
+        // luminance (R channel), not alpha — convert it first.
         const segMask = segMaskRef.current;
         if (segMask) {
+          maskCanvas.width  = W;
+          maskCanvas.height = H;
+          const mCtx = maskCanvas.getContext("2d")!;
+          mCtx.drawImage(segMask, 0, 0, W, H);
+
+          // Convert luminance → alpha so we can use it as a cut mask
+          const id = mCtx.getImageData(0, 0, W, H);
+          const d  = id.data;
+          for (let i = 0; i < d.length; i += 4) {
+            d[i + 3] = d[i]; // alpha = red channel (luminance)
+            d[i] = d[i + 1] = d[i + 2] = 255;
+          }
+          mCtx.putImageData(id, 0, 0);
+
+          // Draw mirrored video, then cut to person shape
           personCanvas.width  = W;
           personCanvas.height = H;
           const pCtx = personCanvas.getContext("2d")!;
           pCtx.clearRect(0, 0, W, H);
-
-          // Draw the segmentation mask (white=person, black=background)
-          pCtx.drawImage(segMask, 0, 0, W, H);
-
-          // Keep only person pixels from the video (mask acts as alpha)
-          pCtx.globalCompositeOperation = "source-in";
           pCtx.save();
           pCtx.translate(W, 0);
           pCtx.scale(-1, 1);
           pCtx.drawImage(video, 0, 0, W, H);
           pCtx.restore();
+          pCtx.globalCompositeOperation = "destination-in";
+          pCtx.drawImage(maskCanvas, 0, 0);
           pCtx.globalCompositeOperation = "source-over";
 
-          // Composite person on top of garment
           ctx.drawImage(personCanvas, 0, 0);
         }
       }
