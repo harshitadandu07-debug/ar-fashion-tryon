@@ -37,7 +37,7 @@ export function useHandGesture(
 
     function init() {
       const HandsClass = (window as any).Hands;
-      if (!HandsClass || !videoRef.current) return;
+      if (!HandsClass) return;
 
       hands = new HandsClass({
         locateFile: (file: string) =>
