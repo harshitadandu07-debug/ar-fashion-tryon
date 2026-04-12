@@ -96,14 +96,17 @@ export function useBodyPose(
         if (ls && rs && lh && rh) {
           const shoulderSpan = Math.abs(ls.x - rs.x);
           const midX         = (ls.x + rs.x) / 2;
+          // Anchor top of garment at the neck/collar (slightly above shoulders)
           const shoulderY    = Math.min(ls.y, rs.y);
           const hipY         = (lh.y + rh.y) / 2;
-          const clothingW    = shoulderSpan * 2.5;
-          const clothingH    = (hipY - shoulderY) * 1.8;
+          // Width: matches shoulder width closely so coat looks worn, not draped
+          const clothingW    = shoulderSpan * 2.0;
+          // Height: from collar down to mid-thigh (2.5x shoulder-to-hip distance)
+          const clothingH    = (hipY - shoulderY) * 2.5;
 
           setTorso({
             x: midX - clothingW / 2,
-            y: shoulderY - shoulderSpan * 0.3,
+            y: shoulderY - shoulderSpan * 0.15, // collar sits just above shoulders
             width: clothingW,
             height: clothingH,
           });
