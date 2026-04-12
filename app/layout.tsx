@@ -35,6 +35,10 @@ export default function RootLayout({
           src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
           strategy="beforeInteractive"
         />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );
