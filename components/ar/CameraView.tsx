@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
 import springData from "@/data/seasons/spring.json";
@@ -15,20 +15,21 @@ const SEASON_DATA = {
   winter: winterData,
 };
 
-const currentSeasonData = SEASON_DATA[getCurrentSeason()];
-
-const PRODUCTS: Product[] = currentSeasonData.trends.map((t) => ({
-  id: t.id,
-  category: t.category,
-  name: t.name,
-  description: t.description,
-  price: t.price,
-  image: t.imagePath,
-}));
-
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
 export default function CameraView() {
+  const products = useMemo<Product[]>(() => {
+    const data = SEASON_DATA[getCurrentSeason()];
+    return data.trends.map((t) => ({
+      id: t.id,
+      category: t.category,
+      name: t.name,
+      description: t.description,
+      price: t.price,
+      image: t.imagePath,
+    }));
+  }, []);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [permission, setPermission] = useState<PermissionState>("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">(
@@ -179,7 +180,7 @@ export default function CameraView() {
       {/* Product cards — horizontal scroll */}
       <div className="absolute bottom-0 left-0 right-0 z-10 pb-4">
         <div className="flex gap-6 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
-          {PRODUCTS.map((product) => (
+          {products.map((product) => (
             <div key={product.id} className="snap-start">
               <ProductCard product={product} />
             </div>
