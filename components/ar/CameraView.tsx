@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { useSwipeable } from "react-swipeable";
 import ProductCard, { type Product } from "@/components/ui/ProductCard";
 import { getCurrentSeason } from "@/lib/season";
-import { useBodyPose } from "@/components/ar/useBodyPose";
+import { useBodyPose, type TorsoBox } from "@/components/ar/useBodyPose";
 import springData from "@/data/seasons/spring.json";
 import summerData from "@/data/seasons/summer.json";
 import fallData from "@/data/seasons/fall.json";
@@ -17,7 +16,6 @@ const SEASON_DATA = {
   fall: fallData,
   winter: winterData,
 };
-
 
 type PermissionState = "idle" | "requesting" | "granted" | "denied";
 
@@ -34,43 +32,128 @@ export default function CameraView() {
     }));
   }, []);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
-  const [permission, setPermission] = useState<PermissionState>("idle");
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("user");
+  const videoRef  = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cardsRef  = useRef<HTMLDivElement>(null);
+
+  const [permission, setPermission]   = useState<PermissionState>("idle");
+  const [facingMode, setFacingMode]   = useState<"environment" | "user">("user");
   const [gestureHint, setGestureHint] = useState<"left" | "right" | null>(null);
-  const [mpStatus, setMpStatus] = useState<string>("Waiting for MediaPipe…");
+  const [mpStatus, setMpStatus]       = useState<string>("Waiting for MediaPipe…");
   const [activeIndex, setActiveIndex] = useState(0);
-  const [overlayError, setOverlayError] = useState(false);
-  const streamRef = useRef<MediaStream | null>(null);
+
+  const streamRef       = useRef<MediaStream | null>(null);
   const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refs so the canvas RAF loop always has the latest values without restarts
+  const torsoRef        = useRef<TorsoBox | null>(null);
+  const garmentImgRef   = useRef<HTMLImageElement | null>(null);
+  const activeIndexRef  = useRef(0);
 
   const scrollCards = useCallback((direction: "left" | "right") => {
     const container = cardsRef.current;
     if (!container) return;
-    const step = container.offsetWidth;
-    container.scrollBy({ left: direction === "right" ? step : -step, behavior: "smooth" });
+    container.scrollBy({ left: direction === "right" ? container.offsetWidth : -container.offsetWidth, behavior: "smooth" });
   }, []);
 
-  const handleHandSwipe = useCallback(
-    (direction: "left" | "right") => {
-      scrollCards(direction);
-      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
-      setGestureHint(direction);
-      gestureTimerRef.current = setTimeout(() => setGestureHint(null), 600);
-    },
-    [scrollCards]
-  );
+  const handleHandSwipe = useCallback((direction: "left" | "right") => {
+    scrollCards(direction);
+    if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+    setGestureHint(direction);
+    gestureTimerRef.current = setTimeout(() => setGestureHint(null), 600);
+  }, [scrollCards]);
 
   const torso = useBodyPose(videoRef, handleHandSwipe, setMpStatus);
 
+  // Keep torsoRef in sync
+  useEffect(() => { torsoRef.current = torso; }, [torso]);
+
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => scrollCards("right"),
+    onSwipedLeft:  () => scrollCards("right"),
     onSwipedRight: () => scrollCards("left"),
     delta: 30,
     preventScrollOnSwipe: true,
     trackTouch: true,
   });
+
+  // Load garment image whenever active product changes
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+    const src = products[activeIndex]?.image;
+    if (!src) { garmentImgRef.current = null; return; }
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload  = () => { garmentImgRef.current = img; };
+    img.onerror = () => { garmentImgRef.current = null; };
+    img.src = src;
+  }, [activeIndex, products]);
+
+  // Canvas render loop — composites video + garment together
+  useEffect(() => {
+    if (permission !== "granted") return;
+    const canvas = canvasRef.current;
+    const video  = videoRef.current;
+    if (!canvas || !video) return;
+
+    let rafId: number;
+
+    function render() {
+      if (!canvas || !video) return;
+
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext("2d")!;
+
+        // Draw mirrored video frame (front camera selfie view)
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        // Draw garment with multiply blend — white bg disappears, fabric stays
+        const img   = garmentImgRef.current;
+        const torso = torsoRef.current;
+        if (img && torso) {
+          const x = torso.x * canvas.width;
+          const y = torso.y * canvas.height;
+          const w = torso.width  * canvas.width;
+          const h = torso.height * canvas.height;
+
+          ctx.globalCompositeOperation = "multiply";
+          ctx.drawImage(img, x, y, w, h);
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+
+      rafId = requestAnimationFrame(render);
+    }
+
+    rafId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(rafId);
+  }, [permission]);
+
+  // Track which card is centered
+  useEffect(() => {
+    if (permission !== "granted") return;
+    const container = cardsRef.current;
+    if (!container) return;
+    function onScroll() {
+      if (!container) return;
+      const idx = Math.round(container.scrollLeft / container.offsetWidth);
+      setActiveIndex(Math.max(0, Math.min(idx, products.length - 1)));
+    }
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [permission, products.length]);
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+    };
+  }, []);
 
   async function startCamera(facing: "environment" | "user") {
     if (streamRef.current) {
@@ -102,67 +185,24 @@ export default function CameraView() {
     await startCamera(next);
   }
 
-  // Track which card is centered by watching scroll position
-  useEffect(() => {
-    if (permission !== "granted") return;
-    const container = cardsRef.current;
-    if (!container) return;
-    function onScroll() {
-      if (!container) return;
-      const idx = Math.round(container.scrollLeft / container.offsetWidth);
-      setActiveIndex(Math.max(0, Math.min(idx, products.length - 1)));
-    }
-    container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [permission, products.length]);
-
-  // Reset overlay error when product changes
-  useEffect(() => { setOverlayError(false); }, [activeIndex]);
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
-    };
-  }, []);
-
   if (permission === "idle" || permission === "requesting") {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-black px-6 text-white">
-        {/* Animated camera ring */}
         <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
           <div className="absolute inset-0 animate-ping rounded-full bg-white/10" />
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
-            <svg
-              className="h-10 w-10 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-              />
+            <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
             </svg>
           </div>
         </div>
-
-        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/40">
-          Double Take
-        </p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-white/40">Double Take</p>
         <h2 className="mb-3 text-2xl font-semibold">Enable your camera</h2>
         <p className="mb-10 text-center text-sm leading-relaxed text-white/60">
           We need camera access to show AR try-on looks live on your face.
           Your feed never leaves your device.
         </p>
-
         <button
           onClick={requestPermission}
           disabled={permission === "requesting"}
@@ -170,13 +210,7 @@ export default function CameraView() {
         >
           {permission === "requesting" ? "Starting camera…" : "Allow camera"}
         </button>
-
-        <a
-          href="/"
-          className="mt-5 text-sm text-white/40 underline underline-offset-4"
-        >
-          Go back
-        </a>
+        <a href="/" className="mt-5 text-sm text-white/40 underline underline-offset-4">Go back</a>
       </div>
     );
   }
@@ -185,53 +219,21 @@ export default function CameraView() {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-black px-6 text-white">
         <h2 className="mb-2 text-2xl font-semibold">Camera blocked</h2>
-        <p className="mb-6 text-center text-sm text-white/60">
-          Allow camera access in your browser settings and reload the page.
-        </p>
-        <a
-          href="/"
-          className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black"
-        >
-          Go back
-        </a>
+        <p className="mb-6 text-center text-sm text-white/60">Allow camera access in your browser settings and reload the page.</p>
+        <a href="/" className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black">Go back</a>
       </div>
     );
   }
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
-      {/* Camera feed */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {/* Hidden video — feeds MediaPipe and the canvas renderer */}
+      <video ref={videoRef} autoPlay playsInline muted className="absolute opacity-0 pointer-events-none" />
 
-      {/* AR outfit overlay — tracks body via MediaPipe Pose */}
-      {!overlayError && products[activeIndex]?.image && torso && (
-        <div
-          className="pointer-events-none absolute z-[5]"
-          style={{
-            left: `${torso.x * 100}%`,
-            top: `${torso.y * 100}%`,
-            width: `${torso.width * 100}%`,
-            height: `${torso.height * 100}%`,
-          }}
-        >
-          <Image
-            key={products[activeIndex].image}
-            src={products[activeIndex].image!}
-            alt={products[activeIndex].name}
-            fill
-            className="object-contain mix-blend-multiply"
-            onError={() => setOverlayError(true)}
-          />
-        </div>
-      )}
+      {/* Canvas — renders video + garment composite */}
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
 
-      {/* MediaPipe debug status */}
+      {/* MediaPipe status */}
       <div className="absolute left-4 top-4 z-10 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm max-w-[60vw] truncate">
         {mpStatus}
       </div>
@@ -242,24 +244,13 @@ export default function CameraView() {
         className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
         aria-label="Flip camera"
       >
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-          />
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
         </svg>
       </button>
 
-      {/* Product cards — horizontal scroll with touch + gesture support */}
+      {/* Product cards */}
       <div className="absolute bottom-0 left-0 right-0 z-10 pb-4">
-        {/* Gesture indicator — shown only on hand swipe */}
         {gestureHint && (
           <div className="mb-2 flex justify-center">
             <span className="rounded-full bg-white/20 px-3 py-1 text-xs text-white backdrop-blur-sm">
@@ -268,30 +259,13 @@ export default function CameraView() {
           </div>
         )}
 
-        {/* Arrow nav buttons */}
         <div className="mb-2 flex items-center justify-between px-4">
-          <button
-            onClick={() => scrollCards("left")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
-            aria-label="Previous"
-          >
-            ‹
-          </button>
-          <button
-            onClick={() => scrollCards("right")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
-            aria-label="Next"
-          >
-            ›
-          </button>
+          <button onClick={() => scrollCards("left")} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm" aria-label="Previous">‹</button>
+          <button onClick={() => scrollCards("right")} className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm" aria-label="Next">›</button>
         </div>
 
-        {/* Swipeable wrapper + scrollable cards container */}
         <div {...swipeHandlers} className="w-full">
-          <div
-            ref={cardsRef}
-            className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
-          >
+          <div ref={cardsRef} className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
             {products.map((product) => (
               <div key={product.id} className="w-full flex-shrink-0 snap-center flex justify-center px-6">
                 <ProductCard product={product} />
