@@ -4,6 +4,7 @@ export type Product = {
   name: string;
   description: string;
   price: string;
+  image?: string;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -11,9 +12,17 @@ export default function ProductCard({ product }: { product: Product }) {
     <div className="w-64 flex-shrink-0 rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/15">
       <div className="flex items-center gap-4">
         <div className="h-20 w-20 flex-shrink-0 rounded-xl bg-white/20 overflow-hidden">
-          <div className="h-full w-full flex items-center justify-center text-white/40 text-xs">
-            img
-          </div>
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-white/40 text-xs">
+              img
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0 text-white">
           <p className="text-xs font-semibold tracking-wide text-white/50 uppercase">
