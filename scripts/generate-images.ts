@@ -8,7 +8,8 @@ const VALID_SEASONS = ["spring", "summer", "fall", "winter"] as const;
 type Season = (typeof VALID_SEASONS)[number];
 
 const args = process.argv.slice(2);
-const seasonArg = args[args.indexOf("--season") + 1] as Season | undefined;
+const seasonIndex = args.indexOf("--season");
+const seasonArg = (seasonIndex !== -1 ? args[seasonIndex + 1] : undefined) as Season | undefined;
 const force = args.includes("--force");
 
 if (!seasonArg || !VALID_SEASONS.includes(seasonArg)) {
@@ -25,9 +26,13 @@ if (!token) {
 }
 
 const dataPath = path.join(process.cwd(), "data/seasons", `${seasonArg}.json`);
-const seasonData = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as {
-  trends: { name: string; imagePrompt: string; imagePath: string }[];
-};
+let seasonData: { trends: { name: string; imagePrompt: string; imagePath: string }[] };
+try {
+  seasonData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+} catch {
+  console.error(`Season data file not found: ${dataPath}`);
+  process.exit(1);
+}
 
 for (const trend of seasonData.trends) {
   const outputPath = path.join(process.cwd(), "public", trend.imagePath);
