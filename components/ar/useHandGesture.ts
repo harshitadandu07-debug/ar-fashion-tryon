@@ -2,35 +2,47 @@
 
 import { useEffect, useRef } from "react";
 
-const DELTA_THRESHOLD = 0.15;  // 15% of frame width
-const TIME_WINDOW_MS = 400;    // movement must complete within 400ms
+const DELTA_THRESHOLD = 0.08;  // 8% of frame width
+const TIME_WINDOW_MS = 600;    // movement must complete within 600ms
 const COOLDOWN_MS = 800;       // minimum ms between swipe triggers
+const EMA_ALPHA = 0.4;         // smoothing factor (0=max smooth, 1=no smooth)
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export function useHandGesture(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  onSwipe: (direction: "left" | "right") => void
+  onSwipe: (direction: "left" | "right") => void,
+  onStatus?: (status: string) => void
 ): void {
-  // Use a ref for the callback to avoid re-running the effect when it changes
   const onSwipeRef = useRef(onSwipe);
-  useEffect(() => {
-    onSwipeRef.current = onSwipe;
-  }, [onSwipe]);
+  useEffect(() => { onSwipeRef.current = onSwipe; }, [onSwipe]);
+
+  const onStatusRef = useRef(onStatus);
+  useEffect(() => { onStatusRef.current = onStatus; }, [onStatus]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     let rafId = 0;
     let hands: any = null;
-    let lastX: number | null = null;
-    let lastTime = 0;
+    let startX: number | null = null;
+    let startTime = 0;
+    let smoothX: number | null = null;
     let cooldownUntil = 0;
+    let processing = false;
+
+    function report(msg: string) {
+      onStatusRef.current?.(msg);
+    }
 
     function processFrame() {
       const video = videoRef.current;
-      if (video && video.readyState >= 2 && hands) {
-        hands.send({ image: video }).catch(() => {/* ignore per-frame errors */});
+      if (video && video.readyState >= 2 && hands && !processing) {
+        processing = true;
+        hands.send({ image: video }).catch((e: unknown) => {
+          processing = false;
+          report(`send error: ${e}`);
+        });
       }
       rafId = requestAnimationFrame(processFrame);
     }
@@ -53,40 +65,61 @@ export function useHandGesture(
       });
 
       hands.onResults((results: any) => {
+        processing = false;
+
         if (!results.multiHandLandmarks?.length) {
-          lastX = null;
+          if (startX !== null) report("No hand — show your hand");
+          startX = null;
+          smoothX = null;
           return;
         }
 
-        const wrist = results.multiHandLandmarks[0][0]; // landmark 0 = wrist
+        const rawX = results.multiHandLandmarks[0][0].x;
         const now = Date.now();
 
-        if (lastX !== null && now > cooldownUntil) {
-          const delta = wrist.x - lastX;
-          const elapsed = now - lastTime;
+        if (now < cooldownUntil) return;
 
-          if (Math.abs(delta) > DELTA_THRESHOLD && elapsed < TIME_WINDOW_MS) {
-            // hand moves right (x increases) → next card (scroll right)
-            // hand moves left  (x decreases) → prev card (scroll left)
-            const direction: "left" | "right" = delta > 0 ? "right" : "left";
-            onSwipeRef.current(direction);
-            cooldownUntil = now + COOLDOWN_MS;
-            lastX = null;
-            return;
-          }
+        // Smooth the x position with EMA
+        smoothX = smoothX === null ? rawX : EMA_ALPHA * rawX + (1 - EMA_ALPHA) * smoothX;
+
+        if (startX === null) {
+          startX = smoothX;
+          startTime = now;
+          report("Hand detected — swipe left or right!");
+          return;
         }
 
-        lastX = wrist.x;
-        lastTime = now;
+        const elapsed = now - startTime;
+
+        // Time window expired — reset start position
+        if (elapsed > TIME_WINDOW_MS) {
+          startX = smoothX;
+          startTime = now;
+          return;
+        }
+
+        // Front camera with selfieMode: x increases = user moved left, decreases = user moved right
+        // So invert: delta > 0 → user went left → scroll left; delta < 0 → user went right → scroll right
+        const delta = smoothX! - startX;
+
+        if (Math.abs(delta) > DELTA_THRESHOLD) {
+          const direction: "left" | "right" = delta > 0 ? "left" : "right";
+          onSwipeRef.current(direction);
+          cooldownUntil = now + COOLDOWN_MS;
+          startX = null;
+          smoothX = null;
+          report(`Swiped ${direction}!`);
+        }
       });
 
       rafId = requestAnimationFrame(processFrame);
+      report("Running — show your hand");
     }
 
-    // MediaPipe may still be loading when this effect runs
     if ((window as any).Hands) {
       init();
     } else {
+      report("Waiting for MediaPipe…");
       const interval = setInterval(() => {
         if ((window as any).Hands) {
           clearInterval(interval);
