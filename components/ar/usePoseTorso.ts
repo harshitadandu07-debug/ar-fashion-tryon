@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -58,6 +58,7 @@ export function usePoseTorso(
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let mounted    = true;
     let rafId      = 0;
     let pose: any  = null;
     let processing = false;
@@ -74,7 +75,15 @@ export function usePoseTorso(
     let smoothX: number | null = null;
     let cooldownUntil         = 0;
 
-    function report(msg: string) { onStatusRef.current?.(msg); }
+    // Confidence state
+    let prevConf = -1;
+
+    let lastStatus = "";
+    function report(msg: string) {
+      if (msg === lastStatus) return;
+      lastStatus = msg;
+      onStatusRef.current?.(msg);
+    }
 
     function processFrame() {
       const video = videoRef.current;
@@ -113,8 +122,8 @@ export function usePoseTorso(
 
         const lm = results.poseLandmarks;
         if (!lm) {
-          setTorso(null);
-          setConfidence(0);
+          if (mounted) setTorso(null);
+          if (mounted) setConfidence(0);
           smLS = smRS = smLH = smRH = null;
           startX = null;
           smoothX = null;
@@ -128,14 +137,17 @@ export function usePoseTorso(
         const rh = lm[R_HIP];
 
         if (!ls || !rs || !lh || !rh) {
-          setTorso(null);
-          setConfidence(0);
+          if (mounted) setTorso(null);
+          if (mounted) setConfidence(0);
           return;
         }
 
         // Average visibility across the 4 key landmarks
         const conf = ((ls.visibility ?? 0) + (rs.visibility ?? 0) + (lh.visibility ?? 0) + (rh.visibility ?? 0)) / 4;
-        setConfidence(conf);
+        if (Math.abs(conf - prevConf) > 0.01) {
+          prevConf = conf;
+          if (mounted) setConfidence(conf);
+        }
 
         // EMA-smooth each point
         smLS = ema(smLS, ls);
@@ -150,20 +162,24 @@ export function usePoseTorso(
           y: Math.min(smLS.y, smRS.y) - shoulderSpan * 0.5,
         };
 
-        setTorso({
-          lShoulder: smLS,
-          rShoulder: smRS,
-          lHip:      smLH,
-          rHip:      smRH,
-          neck,
-        });
+        if (mounted) {
+          setTorso({
+            lShoulder: smLS,
+            rShoulder: smRS,
+            lHip:      smLH,
+            rHip:      smRH,
+            neck,
+          });
+        }
 
         if (conf >= 0.6) {
           report("Body detected — swipe left or right to try on");
         }
 
         // ── Wrist swipe ──────────────────────────────────────────
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const le = lm[L_ELBOW];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const re = lm[R_ELBOW];
         // Use right wrist for swipe detection
         const wrist = lm[R_WRIST];
@@ -200,9 +216,6 @@ export function usePoseTorso(
           smoothX = null;
           report(`Swiped ${direction}!`);
         }
-
-        // suppress unused var lint (le/re kept for future bilateral gesture)
-        void le; void re;
       });
 
       rafId = requestAnimationFrame(processFrame);
@@ -220,6 +233,7 @@ export function usePoseTorso(
         }
       }, 100);
       return () => {
+        mounted = false;
         clearInterval(interval);
         cancelAnimationFrame(rafId);
         pose?.close();
@@ -227,6 +241,7 @@ export function usePoseTorso(
     }
 
     return () => {
+      mounted = false;
       cancelAnimationFrame(rafId);
       pose?.close();
     };
