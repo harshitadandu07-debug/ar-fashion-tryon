@@ -53,8 +53,10 @@ export function drawGarmentAffine(
   const offX = calibration.xOffset * drawW;
   const offY = calibration.yOffset * drawH;
 
+  const clampedAlpha = Math.max(0, Math.min(1, alpha));
+
   ctx.save();
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha = clampedAlpha;
 
   // Move to shoulder midpoint, rotate, draw centred on that point
   ctx.translate(midX, midY);
@@ -78,7 +80,8 @@ export async function removeWhiteBackground(src: string): Promise<OffscreenCanva
   return new Promise((resolve) => {
     if (!src) { resolve(null); return; }
 
-    const img = new window.Image();
+    // Note: HTMLImageElement loading is main-thread only; not Worker-compatible
+    const img = new Image();
     img.crossOrigin = "anonymous";
     img.onerror = () => resolve(null);
     img.onload = () => {
@@ -90,7 +93,8 @@ export async function removeWhiteBackground(src: string): Promise<OffscreenCanva
       const data = id.data;
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i], g = data[i + 1], b = data[i + 2];
-        const brightness = (r + g + b) / 3;
+        // Luminance-weighted: better preserves light-coloured garments than simple average
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
         if (brightness > 240) {
           data[i + 3] = 0;
         } else if (brightness > 210) {
