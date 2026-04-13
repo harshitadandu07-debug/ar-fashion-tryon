@@ -45,8 +45,6 @@ export default function CameraView() {
 
   const streamRef       = useRef<MediaStream | null>(null);
   const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeIndexRef  = useRef(0);
-  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
 
   const scrollCards = useCallback((direction: "left" | "right") => {
     const container = cardsRef.current;
