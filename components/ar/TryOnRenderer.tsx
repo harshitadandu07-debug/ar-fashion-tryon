@@ -39,12 +39,16 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
   // Garment image (white-bg removed) for the active product
   const garmentRef        = useRef<OffscreenCanvas | null>(null);
   const activeIndexRef    = useRef(activeIndex);
+  const productsRef       = useRef(products);
   const [showGuidance, setShowGuidance] = useState(true);
 
   // Update guidance visibility based on confidence
   useEffect(() => {
     setShowGuidance(confidence < CONFIDENCE_THRESHOLD);
   }, [confidence]);
+
+  // Sync products ref for RAF loop
+  useEffect(() => { productsRef.current = products; }, [products]);
 
   // Load + process garment image whenever active product changes
   useEffect(() => {
@@ -107,7 +111,7 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
         const currentTorso = torsoRef.current;
         const currentConf  = confidenceRef.current;
         const garment      = garmentRef.current;
-        const product      = products[activeIndexRef.current];
+        const product      = productsRef.current[activeIndexRef.current];
         const config       = product ? getGarmentConfig(product.id) : null;
 
         const shouldDrawGarment =
@@ -130,6 +134,7 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
                 personCtx    = personCanvas.getContext("2d")!;
               }
               if (personCtx) {
+                personCtx.clearRect(0, 0, W, H);
                 // Draw mirrored video onto offscreen canvas
                 personCtx.save();
                 personCtx.translate(W, 0);
