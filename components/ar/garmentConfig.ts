@@ -1,5 +1,5 @@
+// components/ar/garmentConfig.ts
 export type GarmentAnchor = {
-  // Normalized 0–1 coords within the garment image itself.
   leftShoulder:  { x: number; y: number };
   rightShoulder: { x: number; y: number };
   leftHip:       { x: number; y: number };
@@ -7,18 +7,24 @@ export type GarmentAnchor = {
 };
 
 export type GarmentCalibration = {
-  widthMultiplier:  number;  // multiply detected shoulder-width by this
-  heightMultiplier: number;  // multiply detected torso-height by this
-  xOffset:          number;  // fractional offset of draw origin relative to draw width
-  yOffset:          number;  // fractional offset of draw origin relative to draw height (negative = up)
+  widthMultiplier:  number;
+  heightMultiplier: number;
+  xOffset:          number;
+  yOffset:          number;
 };
 
+export type GarmentType = "upper" | "lower" | "full";
+
 export type GarmentConfig = {
-  productId:    number;
-  category:     "upper-body" | "other"; // only "upper-body" gets AR try-on
-  overlayAsset: string;                 // path to transparent/white-bg PNG for try-on
-  anchors:      GarmentAnchor;
-  calibration:  GarmentCalibration;
+  productId:         number;
+  category:          "upper-body" | "lower-body" | "full-body" | "other";
+  overlayAsset:      string;
+  modelPath:         string;
+  garmentType:       GarmentType;
+  widthMultiplier3d: number;
+  yOffset3d:         number;
+  anchors:           GarmentAnchor;
+  calibration:       GarmentCalibration;
 };
 
 const DEFAULT_ANCHORS: GarmentAnchor = {
@@ -36,19 +42,27 @@ const DEFAULT_CALIBRATION: GarmentCalibration = {
 };
 
 export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
-  1: { // Mode Sportif
-    productId: 1,
-    category: "upper-body",
-    overlayAsset: "/seasons/spring/linen-trench-coat.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: { widthMultiplier: 1.8, heightMultiplier: 3.0, xOffset: 0, yOffset: -0.05 },
+  1: {
+    productId:         1,
+    category:          "upper-body",
+    overlayAsset:      "/seasons/spring/linen-trench-coat.jpg",
+    modelPath:         "/models/jacket.glb",
+    garmentType:       "upper",
+    widthMultiplier3d: 1.8,
+    yOffset3d:         0,
+    anchors:           DEFAULT_ANCHORS,
+    calibration:       { widthMultiplier: 1.8, heightMultiplier: 3.0, xOffset: 0, yOffset: -0.05 },
   },
-  2: { // Literary Chic
-    productId: 2,
-    category: "upper-body",
-    overlayAsset: "/seasons/spring/cotton-shirt.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: DEFAULT_CALIBRATION,
+  2: {
+    productId:         2,
+    category:          "full-body",
+    overlayAsset:      "/seasons/spring/cotton-shirt.jpg",
+    modelPath:         "/models/dress.glb",
+    garmentType:       "full",
+    widthMultiplier3d: 1.6,
+    yOffset3d:         0,
+    anchors:           DEFAULT_ANCHORS,
+    calibration:       DEFAULT_CALIBRATION,
   },
 };
 
