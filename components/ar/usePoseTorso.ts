@@ -29,10 +29,10 @@ const L_ELBOW    = 13;
 const R_ELBOW    = 14;
 const R_WRIST    = 16;
 
-const EMA_ALPHA       = 0.20;
-const DELTA_THRESHOLD = 0.18;
-const TIME_WINDOW_MS  = 500;
-const COOLDOWN_MS     = 1200;
+const EMA_ALPHA       = 0.12; // more smoothing — reduces phone-shake false triggers
+const DELTA_THRESHOLD = 0.28; // higher threshold — requires a more deliberate swipe
+const TIME_WINDOW_MS  = 400;  // shorter window — must be a fast intentional gesture
+const COOLDOWN_MS     = 1800; // longer cooldown — prevents rapid re-triggering
 
 function ema(prev: TorsoPoint | null, next: { x: number; y: number }): TorsoPoint {
   if (prev === null) return { x: next.x, y: next.y };
