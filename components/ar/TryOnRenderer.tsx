@@ -120,12 +120,14 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
           config?.category === "upper-body" &&
           currentConf >= CONFIDENCE_THRESHOLD;
 
-        // Debug: always draw landmarks when torso is detected
+        // Debug: draw full skeleton when body is detected
         if (currentTorso) {
-          const { lShoulder, rShoulder, lHip, rHip, neck } = currentTorso;
-          const pts = { lShoulder, rShoulder, lHip, rHip, neck };
+          const { lShoulder, rShoulder, lHip, rHip, neck,
+                  lElbow, rElbow, lWrist, rWrist,
+                  lKnee, rKnee, lAnkle, rAnkle } = currentTorso;
 
           ctx.save();
+
           // Torso box
           const bx = Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x) * W;
           const bw = (Math.max(lShoulder.x, rShoulder.x, lHip.x, rHip.x) - Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x)) * W;
@@ -135,8 +137,32 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
           ctx.lineWidth = 2;
           ctx.strokeRect(bx, by, bw, bh);
 
-          // Landmarks
-          Object.entries(pts).forEach(([, pt]) => {
+          // Skeleton lines
+          ctx.strokeStyle = "rgba(255,255,0,0.7)";
+          ctx.lineWidth = 2;
+          const line = (a: {x:number;y:number}|null, b: {x:number;y:number}|null) => {
+            if (!a || !b) return;
+            ctx.beginPath();
+            ctx.moveTo(a.x * W, a.y * H);
+            ctx.lineTo(b.x * W, b.y * H);
+            ctx.stroke();
+          };
+          line(neck, lShoulder); line(neck, rShoulder);
+          line(lShoulder, lElbow); line(lElbow, lWrist);
+          line(rShoulder, rElbow); line(rElbow, rWrist);
+          line(lShoulder, lHip);  line(rShoulder, rHip);
+          line(lHip, rHip);
+          line(lHip, lKnee); line(lKnee, lAnkle);
+          line(rHip, rKnee); line(rKnee, rAnkle);
+
+          // All landmark dots
+          const allPts: ({x:number;y:number}|null)[] = [
+            neck, lShoulder, rShoulder, lHip, rHip,
+            lElbow, rElbow, lWrist, rWrist,
+            lKnee, rKnee, lAnkle, rAnkle,
+          ];
+          allPts.forEach((pt) => {
+            if (!pt) return;
             ctx.beginPath();
             ctx.arc(pt.x * W, pt.y * H, 6, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(255,0,0,0.9)";

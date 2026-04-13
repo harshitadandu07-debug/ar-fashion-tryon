@@ -12,6 +12,14 @@ export type TorsoPoints = {
   lHip:      TorsoPoint;
   rHip:      TorsoPoint;
   neck:      TorsoPoint; // estimated: mid-shoulder shifted up
+  lElbow:    TorsoPoint | null;
+  rElbow:    TorsoPoint | null;
+  lWrist:    TorsoPoint | null;
+  rWrist:    TorsoPoint | null;
+  lKnee:     TorsoPoint | null;
+  rKnee:     TorsoPoint | null;
+  lAnkle:    TorsoPoint | null;
+  rAnkle:    TorsoPoint | null;
 };
 
 export type PoseTorsoResult = {
@@ -27,7 +35,12 @@ const L_HIP      = 23;
 const R_HIP      = 24;
 const L_ELBOW    = 13;
 const R_ELBOW    = 14;
+const L_WRIST    = 15;
 const R_WRIST    = 16;
+const L_KNEE     = 25;
+const R_KNEE     = 26;
+const L_ANKLE    = 27;
+const R_ANKLE    = 28;
 
 const EMA_ALPHA       = 0.12; // more smoothing — reduces phone-shake false triggers
 const DELTA_THRESHOLD = 0.28; // higher threshold — requires a more deliberate swipe
@@ -68,6 +81,14 @@ export function usePoseTorso(
     let smRS: TorsoPoint | null = null;
     let smLH: TorsoPoint | null = null;
     let smRH: TorsoPoint | null = null;
+    let smLE: TorsoPoint | null = null;
+    let smRE: TorsoPoint | null = null;
+    let smLW: TorsoPoint | null = null;
+    let smRW: TorsoPoint | null = null;
+    let smLK: TorsoPoint | null = null;
+    let smRK: TorsoPoint | null = null;
+    let smLA: TorsoPoint | null = null;
+    let smRA: TorsoPoint | null = null;
 
     // Swipe state
     let startX: number | null = null;
@@ -125,6 +146,7 @@ export function usePoseTorso(
           if (mounted) setTorso(null);
           if (mounted) setConfidence(0);
           smLS = smRS = smLH = smRH = null;
+          smLE = smRE = smLW = smRW = smLK = smRK = smLA = smRA = null;
           startX = null;
           smoothX = null;
           report("No body detected — step back so upper body is visible");
@@ -154,6 +176,14 @@ export function usePoseTorso(
         smRS = ema(smRS, rs);
         smLH = ema(smLH, lh);
         smRH = ema(smRH, rh);
+        if (lm[L_ELBOW]) smLE = ema(smLE, lm[L_ELBOW]);
+        if (lm[R_ELBOW]) smRE = ema(smRE, lm[R_ELBOW]);
+        if (lm[L_WRIST]) smLW = ema(smLW, lm[L_WRIST]);
+        if (lm[R_WRIST]) smRW = ema(smRW, lm[R_WRIST]);
+        if (lm[L_KNEE])  smLK = ema(smLK, lm[L_KNEE]);
+        if (lm[R_KNEE])  smRK = ema(smRK, lm[R_KNEE]);
+        if (lm[L_ANKLE]) smLA = ema(smLA, lm[L_ANKLE]);
+        if (lm[R_ANKLE]) smRA = ema(smRA, lm[R_ANKLE]);
 
         // Estimate neck: mid-shoulder shifted up by half the shoulder span
         const shoulderSpan = Math.abs(smLS.x - smRS.x);
@@ -169,6 +199,10 @@ export function usePoseTorso(
             lHip:      smLH,
             rHip:      smRH,
             neck,
+            lElbow: smLE, rElbow: smRE,
+            lWrist: smLW, rWrist: smRW,
+            lKnee:  smLK, rKnee:  smRK,
+            lAnkle: smLA, rAnkle: smRA,
           });
         }
 
