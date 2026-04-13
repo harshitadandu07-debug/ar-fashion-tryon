@@ -42,8 +42,10 @@ export function drawGarmentAffine(
   const hipMidY  = (lhY + rhY) / 2;
   const torsoH   = Math.hypot(hipMidX - midX, hipMidY - midY);
 
-  // Tilt angle (radians) — rotation around shoulder midpoint
-  const angle = Math.atan2(rsY - lsY, rsX - lsX);
+  // Tilt angle — computed from lShoulder→rShoulder direction.
+  // In selfieMode, x increases screen-left, so lsX > rsX; swapping operands
+  // gives ~0 for level shoulders instead of ~π (which would flip the garment).
+  const angle = Math.atan2(lsY - rsY, lsX - rsX);
 
   // Final draw dimensions
   const drawW = shoulderSpan * calibration.widthMultiplier;
