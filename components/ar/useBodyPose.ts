@@ -78,8 +78,6 @@ export function useBodyPose(
       pose.setOptions({
         modelComplexity: 0,
         smoothLandmarks: true,
-        enableSegmentation: true,
-        smoothSegmentation: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
         selfieMode: true,
