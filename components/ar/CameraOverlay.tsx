@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import TryOnRenderer from "@/components/ar/TryOnRenderer";
+import ThreeARRenderer from "@/components/ar/ThreeARRenderer";
 import type { Product } from "@/components/ui/ProductCard";
 
 const PERMISSION_KEY = "dt_camera_permission_granted";
@@ -52,8 +52,6 @@ export default function CameraOverlay({ product, onClose }: Props) {
   }
 
   const stableStatus = useCallback((s: string) => setMpStatus(s), []);
-  // No swipe navigation inside the overlay — single product
-  const noopSwipe = useCallback(() => {}, []);
 
   // ── Permission screen ──────────────────────────────────────────
   if (cameraState === "requesting") {
@@ -120,18 +118,12 @@ export default function CameraOverlay({ product, onClose }: Props) {
   // ── Live AR session ────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 bg-black animate-in slide-in-from-bottom duration-300">
-      {/* Hidden video — feeds MediaPipe + TryOnRenderer */}
+      {/* Hidden video — feeds MediaPipe + ThreeARRenderer */}
       <video ref={videoRef} autoPlay playsInline muted className="absolute opacity-0 pointer-events-none" />
 
       {/* AR canvas + guidance overlay */}
       {cameraState === "granted" && (
-        <TryOnRenderer
-          videoRef={videoRef}
-          products={[product]}
-          activeIndex={0}
-          onSwipe={noopSwipe}
-          onStatus={stableStatus}
-        />
+        <ThreeARRenderer videoRef={videoRef} product={product} onStatus={stableStatus} />
       )}
 
       {/* Status pill */}

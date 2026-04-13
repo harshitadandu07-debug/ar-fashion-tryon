@@ -114,70 +114,11 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
         const product      = productsRef.current[activeIndexRef.current];
         const config       = product ? getGarmentConfig(product.id) : null;
 
-        const shouldDrawGarment =
-          garment !== null &&
-          currentTorso !== null &&
-          config?.category === "upper-body" &&
-          currentConf >= CONFIDENCE_THRESHOLD;
-
-        // Debug: draw full skeleton when body is detected
-        if (currentTorso) {
-          const { lShoulder, rShoulder, lHip, rHip, neck,
-                  lElbow, rElbow, lWrist, rWrist,
-                  lKnee, rKnee, lAnkle, rAnkle } = currentTorso;
-
-          ctx.save();
-
-          // Torso box
-          const bx = Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x) * W;
-          const bw = (Math.max(lShoulder.x, rShoulder.x, lHip.x, rHip.x) - Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x)) * W;
-          const by = Math.min(lShoulder.y, rShoulder.y) * H;
-          const bh = (Math.max(lHip.y, rHip.y) - Math.min(lShoulder.y, rShoulder.y)) * H;
-          ctx.strokeStyle = "rgba(0,255,0,0.8)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(bx, by, bw, bh);
-
-          // Skeleton lines
-          ctx.strokeStyle = "rgba(255,255,0,0.7)";
-          ctx.lineWidth = 2;
-          const line = (a: {x:number;y:number}|null, b: {x:number;y:number}|null) => {
-            if (!a || !b) return;
-            ctx.beginPath();
-            ctx.moveTo(a.x * W, a.y * H);
-            ctx.lineTo(b.x * W, b.y * H);
-            ctx.stroke();
-          };
-          line(neck, lShoulder); line(neck, rShoulder);
-          line(lShoulder, lElbow); line(lElbow, lWrist);
-          line(rShoulder, rElbow); line(rElbow, rWrist);
-          line(lShoulder, lHip);  line(rShoulder, rHip);
-          line(lHip, rHip);
-          line(lHip, lKnee); line(lKnee, lAnkle);
-          line(rHip, rKnee); line(rKnee, rAnkle);
-
-          // All landmark dots
-          const allPts: ({x:number;y:number}|null)[] = [
-            neck, lShoulder, rShoulder, lHip, rHip,
-            lElbow, rElbow, lWrist, rWrist,
-            lKnee, rKnee, lAnkle, rAnkle,
-          ];
-          allPts.forEach((pt) => {
-            if (!pt) return;
-            ctx.beginPath();
-            ctx.arc(pt.x * W, pt.y * H, 6, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255,0,0,0.9)";
-            ctx.fill();
-          });
-
-          // Confidence
-          ctx.fillStyle = "white";
-          ctx.font = "14px monospace";
-          ctx.fillText(`conf: ${currentConf.toFixed(2)}`, 8, H - 8);
-          ctx.restore();
-        }
-
-        if (shouldDrawGarment && garment && currentTorso && config) {
-          // Fade garment when confidence is borderline
+        if (
+          garment && currentTorso && config &&
+          (config.category === "upper-body" || config.category === "full-body") &&
+          currentConf >= CONFIDENCE_THRESHOLD
+        ) {
           const garmentAlpha = Math.min(1, (currentConf - CONFIDENCE_THRESHOLD) / 0.15 + 0.7);
           drawGarmentAffine(ctx, garment, currentTorso, config.calibration, W, H, garmentAlpha);
         }
