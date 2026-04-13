@@ -36,50 +36,15 @@ const DEFAULT_CALIBRATION: GarmentCalibration = {
 };
 
 export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
-  1: {
+  1: { // Mode Sportif
     productId: 1,
     category: "upper-body",
     overlayAsset: "/seasons/spring/linen-trench-coat.jpg",
     anchors: DEFAULT_ANCHORS,
     calibration: { widthMultiplier: 1.8, heightMultiplier: 3.0, xOffset: 0, yOffset: -0.05 },
   },
-  2: {
+  2: { // Literary Chic
     productId: 2,
-    category: "other",
-    overlayAsset: "/seasons/spring/silk-slip-dress.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: DEFAULT_CALIBRATION,
-  },
-  3: {
-    productId: 3,
-    category: "other",
-    overlayAsset: "/seasons/spring/brooches-set.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: DEFAULT_CALIBRATION,
-  },
-  4: {
-    productId: 4,
-    category: "other",
-    overlayAsset: "/seasons/spring/wide-leg-trousers.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: DEFAULT_CALIBRATION,
-  },
-  5: {
-    productId: 5,
-    category: "upper-body",
-    overlayAsset: "/seasons/spring/knit-cardigan.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: { widthMultiplier: 1.55, heightMultiplier: 2.0, xOffset: 0, yOffset: -0.06 },
-  },
-  6: {
-    productId: 6,
-    category: "upper-body",
-    overlayAsset: "/seasons/spring/linen-blazer.jpg",
-    anchors: DEFAULT_ANCHORS,
-    calibration: { widthMultiplier: 1.65, heightMultiplier: 2.1, xOffset: 0, yOffset: -0.07 },
-  },
-  7: {
-    productId: 7,
     category: "upper-body",
     overlayAsset: "/seasons/spring/cotton-shirt.jpg",
     anchors: DEFAULT_ANCHORS,
