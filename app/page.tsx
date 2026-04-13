@@ -47,16 +47,10 @@ export default function Page() {
         {/* CTAs */}
         <section className="space-y-3">
           <a
-            href="/ar"
+            href="/looks"
             className="block w-full rounded-2xl bg-white px-5 py-4 text-center text-sm font-semibold text-black"
           >
-            Start AR Try-On
-          </a>
-          <a
-            href="/ar?entry=qr"
-            className="block w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-sm font-semibold text-white"
-          >
-            Enter via QR
+            Explore Fashion Trends
           </a>
           <p className="text-center text-xs text-white/30">
             Best in good lighting · iPhone Safari &amp; Android Chrome
