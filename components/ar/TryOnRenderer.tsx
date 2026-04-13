@@ -125,35 +125,10 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
           const garmentAlpha = Math.min(1, (currentConf - CONFIDENCE_THRESHOLD) / 0.15 + 0.7);
           drawGarmentAffine(ctx, garment, currentTorso, config.calibration, W, H, garmentAlpha);
 
-          // 3. Person-over-garment: composite person pixels on top so arms appear in front
-          const mask = segMaskRef.current;
-          if (mask) {
-            try {
-              if (!personCanvas || personCanvas.width !== W || personCanvas.height !== H) {
-                personCanvas = new OffscreenCanvas(W, H);
-                personCtx    = personCanvas.getContext("2d")!;
-              }
-              if (personCtx) {
-                personCtx.clearRect(0, 0, W, H);
-                // Draw mirrored video onto offscreen canvas
-                personCtx.save();
-                personCtx.translate(W, 0);
-                personCtx.scale(-1, 1);
-                personCtx.drawImage(video, 0, 0, W, H);
-                personCtx.restore();
-
-                // Keep only person pixels (mask = white where person is)
-                personCtx.globalCompositeOperation = "destination-in";
-                personCtx.drawImage(mask, 0, 0, W, H);
-                personCtx.globalCompositeOperation = "source-over";
-
-                // Paint person pixels on top of garment
-                ctx.drawImage(personCanvas, 0, 0);
-              }
-            } catch {
-              // Segmentation compositing failed (e.g. cross-origin canvas) — skip silently
-            }
-          }
+          // Note: person-over-garment segmentation compositing is disabled.
+          // The full-body segmentation mask covers the torso, which hides the garment.
+          // A future improvement would mask only the arms/hands region to show them
+          // in front of the garment while keeping the torso visible.
         }
       }
 

@@ -58,12 +58,13 @@ export function drawGarmentAffine(
   ctx.save();
   ctx.globalAlpha = clampedAlpha;
 
-  // Move to shoulder midpoint, rotate, draw centred on that point
+  // Move to shoulder midpoint, rotate, mirror to match selfie camera view, draw
   ctx.translate(midX, midY);
   ctx.rotate(angle);
+  ctx.scale(-1, 1); // flip horizontally — garment image is front-facing; selfie view needs mirror
   ctx.drawImage(
     img,
-    -drawW / 2 + offX,   // left edge of garment image
+    -drawW / 2 + offX,   // left edge (after scale, this maps to screen-right)
     offY,                  // top edge starts just above shoulders (offY is negative)
     drawW,
     drawH,
