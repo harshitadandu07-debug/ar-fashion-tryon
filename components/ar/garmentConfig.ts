@@ -38,7 +38,7 @@ const DEFAULT_CALIBRATION: GarmentCalibration = {
 export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
   1: {
     productId: 1,
-    category: "other",
+    category: "upper-body",
     overlayAsset: "/seasons/spring/linen-trench-coat.jpg",
     anchors: DEFAULT_ANCHORS,
     calibration: { widthMultiplier: 1.8, heightMultiplier: 3.0, xOffset: 0, yOffset: -0.05 },
