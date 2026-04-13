@@ -8,8 +8,8 @@
       "name": "Linen Trench Coat",
       "description": "Beige — Oversized fit",
       "price": "$320",
-      "imagePrompt": "editorial fashion photography, oversized beige linen trench coat, soft spring daylight, neutral white background, clean minimal style, high quality",
-      "imagePath": "/seasons/spring/linen-trench-coat.jpg"
+      "imagePath": "/seasons/spring/linen-trench-coat.jpg",
+      "overlayAsset": "/seasons/spring/linen-trench-coat.jpg"
     },
     {
       "id": 2,
@@ -17,8 +17,8 @@
       "name": "Silk Slip Dress",
       "description": "Ivory — Bias cut",
       "price": "$210",
-      "imagePrompt": "editorial fashion photography, ivory silk slip dress bias cut, soft spring light, clean minimal background, elegant styling, high quality",
-      "imagePath": "/seasons/spring/silk-slip-dress.jpg"
+      "imagePath": "/seasons/spring/silk-slip-dress.jpg",
+      "overlayAsset": "/seasons/spring/silk-slip-dress.jpg"
     },
     {
       "id": 3,
@@ -26,8 +26,8 @@
       "name": "Brooches Set",
       "description": "Silver — Mixed metals",
       "price": "$85",
-      "imagePrompt": "editorial fashion photography, silver mixed metal brooches set displayed on white fabric, macro detail shot, clean minimal background, high quality",
-      "imagePath": "/seasons/spring/brooches-set.jpg"
+      "imagePath": "/seasons/spring/brooches-set.jpg",
+      "overlayAsset": "/seasons/spring/brooches-set.jpg"
     },
     {
       "id": 4,
@@ -35,8 +35,8 @@
       "name": "Wide-Leg Trousers",
       "description": "Stone — Relaxed fit",
       "price": "$175",
-      "imagePrompt": "editorial fashion photography, stone colored wide-leg trousers relaxed fit, spring natural light, neutral minimal background, high quality",
-      "imagePath": "/seasons/spring/wide-leg-trousers.jpg"
+      "imagePath": "/seasons/spring/wide-leg-trousers.jpg",
+      "overlayAsset": "/seasons/spring/wide-leg-trousers.jpg"
     },
     {
       "id": 5,
@@ -44,8 +44,26 @@
       "name": "Knit Cardigan",
       "description": "Cream — Open weave",
       "price": "$140",
-      "imagePrompt": "editorial fashion photography, cream open weave knit cardigan, soft spring light, clean minimal styling, neutral background, high quality",
-      "imagePath": "/seasons/spring/knit-cardigan.jpg"
+      "imagePath": "/seasons/spring/knit-cardigan.jpg",
+      "overlayAsset": "/seasons/spring/knit-cardigan.jpg"
+    },
+    {
+      "id": 6,
+      "category": "Spring 2026",
+      "name": "Linen Blazer",
+      "description": "Sand — Relaxed cut",
+      "price": "$260",
+      "imagePath": "/seasons/spring/linen-blazer.jpg",
+      "overlayAsset": "/seasons/spring/linen-blazer.jpg"
+    },
+    {
+      "id": 7,
+      "category": "Spring 2026",
+      "name": "Cotton Shirt",
+      "description": "White — Relaxed fit",
+      "price": "$95",
+      "imagePath": "/seasons/spring/cotton-shirt.jpg",
+      "overlayAsset": "/seasons/spring/cotton-shirt.jpg"
     }
   ]
 }

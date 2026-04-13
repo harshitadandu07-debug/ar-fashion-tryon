@@ -23,12 +23,13 @@ export default function CameraView() {
   const products = useMemo<Product[]>(() => {
     const data = SEASON_DATA[getCurrentSeason()];
     return data.trends.map((t) => ({
-      id: t.id,
-      category: t.category,
-      name: t.name,
-      description: t.description,
-      price: t.price,
-      image: t.imagePath,
+      id:           t.id,
+      category:     t.category,
+      name:         t.name,
+      description:  t.description,
+      price:        t.price,
+      image:        t.imagePath,
+      overlayAsset: (t as any).overlayAsset,
     }));
   }, []);
 
