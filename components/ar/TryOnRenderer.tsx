@@ -120,52 +120,40 @@ export default function TryOnRenderer({ videoRef, products, activeIndex, onSwipe
           config?.category === "upper-body" &&
           currentConf >= CONFIDENCE_THRESHOLD;
 
+        // Debug: always draw landmarks when torso is detected
+        if (currentTorso) {
+          const { lShoulder, rShoulder, lHip, rHip, neck } = currentTorso;
+          const pts = { lShoulder, rShoulder, lHip, rHip, neck };
+
+          ctx.save();
+          // Torso box
+          const bx = Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x) * W;
+          const bw = (Math.max(lShoulder.x, rShoulder.x, lHip.x, rHip.x) - Math.min(lShoulder.x, rShoulder.x, lHip.x, rHip.x)) * W;
+          const by = Math.min(lShoulder.y, rShoulder.y) * H;
+          const bh = (Math.max(lHip.y, rHip.y) - Math.min(lShoulder.y, rShoulder.y)) * H;
+          ctx.strokeStyle = "rgba(0,255,0,0.8)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx, by, bw, bh);
+
+          // Landmarks
+          Object.entries(pts).forEach(([, pt]) => {
+            ctx.beginPath();
+            ctx.arc(pt.x * W, pt.y * H, 6, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,0,0,0.9)";
+            ctx.fill();
+          });
+
+          // Confidence
+          ctx.fillStyle = "white";
+          ctx.font = "14px monospace";
+          ctx.fillText(`conf: ${currentConf.toFixed(2)}`, 8, H - 8);
+          ctx.restore();
+        }
+
         if (shouldDrawGarment && garment && currentTorso && config) {
           // Fade garment when confidence is borderline
           const garmentAlpha = Math.min(1, (currentConf - CONFIDENCE_THRESHOLD) / 0.15 + 0.7);
-
-          // 2. Draw garment (sits between video and person layer)
           drawGarmentAffine(ctx, garment, currentTorso, config.calibration, W, H, garmentAlpha);
-
-          // 3. Person-over-garment with torso punched out
-          //    → head, arms, legs sit in front of the garment
-          //    → torso region is transparent so the garment shows through
-          const segMask = segMaskRef.current;
-          if (segMask) {
-            // Allocate / reuse offscreen canvas
-            if (!personCanvas || personCanvas.width !== W || personCanvas.height !== H) {
-              personCanvas = new OffscreenCanvas(W, H);
-              personCtx    = personCanvas.getContext("2d")!;
-            }
-
-            // a. Draw mirrored video onto person canvas
-            personCtx!.clearRect(0, 0, W, H);
-            personCtx!.save();
-            personCtx!.translate(W, 0);
-            personCtx!.scale(-1, 1);
-            personCtx!.drawImage(video, 0, 0, W, H);
-            personCtx!.restore();
-
-            // b. Keep only person pixels (mask out background)
-            personCtx!.globalCompositeOperation = "destination-in";
-            personCtx!.drawImage(segMask as CanvasImageSource, 0, 0, W, H);
-
-            // c. Punch out the torso bounding box so garment shows through
-            const { lShoulder, rShoulder, lHip, rHip } = currentTorso;
-            const pad  = 0.04; // slight inward padding to avoid edge artifacts
-            const txL  = Math.min(lShoulder.x, lHip.x) * W - pad * W;
-            const txR  = Math.max(rShoulder.x, rHip.x) * W + pad * W;
-            const tyT  = Math.min(lShoulder.y, rShoulder.y) * H - pad * H;
-            const tyB  = Math.max(lHip.y, rHip.y) * H + pad * H;
-
-            personCtx!.globalCompositeOperation = "destination-out";
-            personCtx!.fillRect(txL, tyT, txR - txL, tyB - tyT);
-
-            personCtx!.globalCompositeOperation = "source-over";
-
-            // d. Composite person (without torso) on top of garment
-            ctx.drawImage(personCanvas, 0, 0);
-          }
         }
       }
 
