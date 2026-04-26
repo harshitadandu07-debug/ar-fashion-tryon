@@ -135,8 +135,12 @@ export default function ThreeARRenderer({
         }
 
         // ── Wrist tracking (adjust mode only) ─────────────────────────
+        const t = torsoRef.current;
+        // Capture baseline lazily if wrists weren't visible when adjust mode activated
+        if (isAdjustModeRef.current && !wristBaselineRef.current && t?.lWrist && t?.rWrist) {
+          wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
+        }
         const baseline = wristBaselineRef.current;
-        const t        = torsoRef.current;
         if (
           isAdjustModeRef.current &&
           baseline &&
