@@ -36,12 +36,23 @@ export default function ThreeARRenderer({
   const onFirstOverlayRef        = useRef(onFirstOverlay);
   const hasTriggeredFirstOverlay = useRef(false);
   const lastTouchRef             = useRef<{ x: number; y: number } | null>(null);
+  const touchCaptureRef          = useRef<HTMLDivElement>(null);
 
   useEffect(() => { adjustOffsetRef.current       = adjustOffset;   }, [adjustOffset]);
   useEffect(() => { onDragRef.current             = onDrag;         }, [onDrag]);
   useEffect(() => { onFirstOverlayRef.current     = onFirstOverlay; }, [onFirstOverlay]);
   // Reset first-overlay trigger when product changes
   useEffect(() => { hasTriggeredFirstOverlay.current = false; }, [product]);
+
+  // Prevent iOS Safari from stealing the touch for page scroll during drag
+  useEffect(() => {
+    if (!isAdjustMode && !showFirstGuide) return;
+    const el = touchCaptureRef.current;
+    if (!el) return;
+    const prevent = (e: TouchEvent) => { e.preventDefault(); };
+    el.addEventListener("touchmove", prevent, { passive: false });
+    return () => el.removeEventListener("touchmove", prevent);
+  }, [isAdjustMode, showFirstGuide]);
 
   const { torso, confidence } = usePoseTorso(videoRef, noopSwipe, stableStatus);
 
@@ -159,6 +170,7 @@ export default function ThreeARRenderer({
       {/* Touch-capture layer — active during adjust mode or first guide */}
       {(isAdjustMode || showFirstGuide) && (
         <div
+          ref={touchCaptureRef}
           className="absolute inset-0 z-20"
           aria-hidden="true"
           onTouchStart={handleTouchStart}
@@ -191,7 +203,7 @@ export default function ThreeARRenderer({
                   </svg>
                 </div>
                 <div className="rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-sm">
-                  <span className="text-xs font-semibold text-white">Drag to adjust fit</span>
+                  <span className="text-xs font-semibold text-white">Touch screen &amp; drag to adjust</span>
                 </div>
                 <span className="text-[10px] text-white/45">Dismisses automatically</span>
               </div>
@@ -200,7 +212,7 @@ export default function ThreeARRenderer({
 
           {isAdjustMode && !showFirstGuide && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 backdrop-blur-sm pointer-events-none">
-              <span className="text-xs text-white/80">Drag to reposition</span>
+              <span className="text-xs text-white/80">Touch screen &amp; drag to reposition</span>
             </div>
           )}
         </div>

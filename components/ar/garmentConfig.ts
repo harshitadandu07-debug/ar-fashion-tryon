@@ -49,7 +49,7 @@ export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
     modelPath:         "/models/jacket.glb",
     garmentType:       "upper",
     widthMultiplier3d: 1.8,
-    yOffset3d:         0,
+    yOffset3d:         0.3,
     anchors:           DEFAULT_ANCHORS,
     calibration:       { widthMultiplier: 1.8, heightMultiplier: 3.0, xOffset: 0, yOffset: -0.05 },
   },
