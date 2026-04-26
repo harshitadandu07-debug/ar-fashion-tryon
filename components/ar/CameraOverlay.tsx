@@ -80,6 +80,11 @@ export default function CameraOverlay({ product, onClose }: Props) {
     startAdjustTimer();
   }, [startAdjustTimer]);
 
+  const handleAdjustFit = useCallback(() => {
+    setIsAdjustMode(true);
+    startAdjustTimer();
+  }, [startAdjustTimer]);
+
   // ── Permission screen ──────────────────────────────────────────
   if (cameraState === "requesting") {
     return (
@@ -179,11 +184,8 @@ export default function CameraOverlay({ product, onClose }: Props) {
       {/* Adjust fit button — appears after first guide has been dismissed */}
       {firstGuideHasBeenShown && !showFirstGuide && !isAdjustMode && (
         <button
-          onClick={() => {
-            setIsAdjustMode(true);
-            startAdjustTimer();
-          }}
-          className="absolute left-4 top-20 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
+          onClick={handleAdjustFit}
+          className="absolute left-4 top-24 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
           aria-label="Adjust outfit fit"
         >
           <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
