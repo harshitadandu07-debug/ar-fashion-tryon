@@ -14,13 +14,14 @@ import type { GarmentCalibration } from "./garmentConfig";
  * @param alpha      - global draw opacity (0–1, used to fade when confidence is low)
  */
 export function drawGarmentAffine(
-  ctx:         CanvasRenderingContext2D,
-  img:         CanvasImageSource,
-  torso:       TorsoPoints,
-  calibration: GarmentCalibration,
-  canvasW:     number,
-  canvasH:     number,
+  ctx:          CanvasRenderingContext2D,
+  img:          CanvasImageSource,
+  torso:        TorsoPoints,
+  calibration:  GarmentCalibration,
+  canvasW:      number,
+  canvasH:      number,
   alpha = 1,
+  adjustOffset: { x: number; y: number } = { x: 0, y: 0 },
 ): void {
   const { lShoulder, rShoulder, lHip, rHip } = torso;
 
@@ -61,7 +62,7 @@ export function drawGarmentAffine(
   ctx.globalAlpha = clampedAlpha;
 
   // Move to shoulder midpoint, rotate, mirror to match selfie camera view, draw
-  ctx.translate(midX, midY);
+  ctx.translate(midX + adjustOffset.x, midY + adjustOffset.y);
   ctx.rotate(angle);
   ctx.scale(-1, 1); // flip horizontally — garment image is front-facing; selfie view needs mirror
   ctx.drawImage(
