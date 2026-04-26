@@ -63,6 +63,9 @@ export default function TryOnRenderer({
   const [showGuidance, setShowGuidance] = useState(true);
 
   // Fire onFirstOverlay once per outfit when confidence crosses threshold and garment is loaded
+  // garmentRef intentionally omitted from deps — it's a ref and mutating .current
+  // doesn't trigger re-renders. The garment-load .then() path handles the race
+  // condition where garment loads after confidence is already above threshold.
   useEffect(() => {
     if (
       confidence >= CONFIDENCE_THRESHOLD &&
@@ -173,26 +176,27 @@ export default function TryOnRenderer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleTouchStart(e: React.TouchEvent) {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-  }
+  }, []);
 
-  function handleTouchMove(e: React.TouchEvent) {
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas || !lastTouchRef.current) return;
-    const touch = e.touches[0];
-    const rect  = canvas.getBoundingClientRect();
-    const scale = canvas.width / rect.width;
-    const dx = (touch.clientX - lastTouchRef.current.x) * scale;
-    const dy = (touch.clientY - lastTouchRef.current.y) * scale;
+    const touch  = e.touches[0];
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const dx = (touch.clientX - lastTouchRef.current.x) * scaleX;
+    const dy = (touch.clientY - lastTouchRef.current.y) * scaleY;
     lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
     onDragRef.current(dx, dy);
-  }
+  }, []);
 
-  function handleTouchEnd() {
+  const handleTouchEnd = useCallback(() => {
     lastTouchRef.current = null;
-  }
+  }, []);
 
   return (
     <>
@@ -202,10 +206,11 @@ export default function TryOnRenderer({
       {/* Touch-capture layer — active during adjust mode or first guide */}
       {(isAdjustMode || showFirstGuide) && (
         <div
-          className="absolute inset-0 z-10"
+          className="absolute inset-0 z-20"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         >
           {showFirstGuide && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
