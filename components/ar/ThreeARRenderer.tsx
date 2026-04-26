@@ -172,8 +172,8 @@ export default function ThreeARRenderer({
             const dominant = locked === "l" ? lWrist : rWrist;
             const prev     = prevWristRef.current;
             if (prev) {
-              // Negate x: mirrored video — physical right = MediaPipe x-decrease = screen right
-              const dx = -(dominant.x - prev.x) * W;
+              // selfieMode: true — MediaPipe x is already in screen space; no negation needed
+              const dx = (dominant.x - prev.x) * W;
               const dy =  (dominant.y - prev.y) * H;
               onDragRef.current(dx, dy);
             }
