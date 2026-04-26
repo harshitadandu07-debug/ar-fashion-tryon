@@ -43,6 +43,12 @@ export default function CameraView() {
   const [mpStatus, setMpStatus]       = useState<string>("Waiting for MediaPipe…");
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const [adjustOffset,           setAdjustOffset]           = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isAdjustMode,           setIsAdjustMode]           = useState(false);
+  const [showFirstGuide,         setShowFirstGuide]         = useState(false);
+  const [firstGuideHasBeenShown, setFirstGuideHasBeenShown] = useState(false);
+  const adjustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const streamRef       = useRef<MediaStream | null>(null);
   const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,6 +60,26 @@ export default function CameraView() {
       behavior: "smooth",
     });
   }, []);
+
+  const startAdjustTimer = useCallback(() => {
+    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+    adjustTimerRef.current = setTimeout(() => {
+      setIsAdjustMode(false);
+      setShowFirstGuide(false);
+    }, 3000);
+  }, []);
+
+  const handleFirstOverlay = useCallback(() => {
+    setShowFirstGuide(true);
+    setIsAdjustMode(true);
+    setFirstGuideHasBeenShown(true);
+    startAdjustTimer();
+  }, [startAdjustTimer]);
+
+  const handleDrag = useCallback((dx: number, dy: number) => {
+    setAdjustOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    startAdjustTimer();
+  }, [startAdjustTimer]);
 
   const handleHandSwipe = useCallback((direction: "left" | "right") => {
     scrollCards(direction);
@@ -84,10 +110,20 @@ export default function CameraView() {
     return () => container.removeEventListener("scroll", onScroll);
   }, [permission, products.length]);
 
+  // Reset adjust state whenever the user switches outfits
+  useEffect(() => {
+    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+    setAdjustOffset({ x: 0, y: 0 });
+    setIsAdjustMode(false);
+    setShowFirstGuide(false);
+    setFirstGuideHasBeenShown(false);
+  }, [activeIndex]);
+
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+      if (adjustTimerRef.current)  clearTimeout(adjustTimerRef.current);
     };
   }, []);
 
@@ -118,6 +154,10 @@ export default function CameraView() {
   async function toggleCamera() {
     const next = facingMode === "environment" ? "user" : "environment";
     setFacingMode(next);
+    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+    setAdjustOffset({ x: 0, y: 0 });
+    setIsAdjustMode(false);
+    setShowFirstGuide(false);
     await startCamera(next);
   }
 
@@ -175,6 +215,11 @@ export default function CameraView() {
         activeIndex={activeIndex}
         onSwipe={handleHandSwipe}
         onStatus={setMpStatus}
+        adjustOffset={adjustOffset}
+        isAdjustMode={isAdjustMode}
+        showFirstGuide={showFirstGuide}
+        onDrag={handleDrag}
+        onFirstOverlay={handleFirstOverlay}
       />
 
       {/* MediaPipe status pill */}
@@ -192,6 +237,23 @@ export default function CameraView() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
         </svg>
       </button>
+
+      {/* Adjust fit button — appears after first guide has been dismissed */}
+      {firstGuideHasBeenShown && !showFirstGuide && !isAdjustMode && (
+        <button
+          onClick={() => {
+            setIsAdjustMode(true);
+            startAdjustTimer();
+          }}
+          className="absolute left-4 top-14 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
+          aria-label="Adjust outfit fit"
+        >
+          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+          </svg>
+          <span className="text-xs font-semibold text-white">Adjust fit</span>
+        </button>
+      )}
 
       {/* Product cards */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pb-4">
