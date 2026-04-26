@@ -186,6 +186,7 @@ export default function TryOnRenderer({
     if (!canvas || !lastTouchRef.current) return;
     const touch  = e.touches[0];
     const rect   = canvas.getBoundingClientRect();
+    // Convert CSS-pixel deltas to canvas-pixel deltas (canvas intrinsic size ≠ displayed size)
     const scaleX = canvas.width  / rect.width;
     const scaleY = canvas.height / rect.height;
     const dx = (touch.clientX - lastTouchRef.current.x) * scaleX;
@@ -207,6 +208,7 @@ export default function TryOnRenderer({
       {(isAdjustMode || showFirstGuide) && (
         <div
           className="absolute inset-0 z-20"
+          aria-hidden="true"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

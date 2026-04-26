@@ -158,6 +158,7 @@ export default function CameraView() {
     setAdjustOffset({ x: 0, y: 0 });
     setIsAdjustMode(false);
     setShowFirstGuide(false);
+    setFirstGuideHasBeenShown(false);
     await startCamera(next);
   }
 
