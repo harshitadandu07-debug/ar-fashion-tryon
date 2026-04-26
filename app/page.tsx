@@ -36,15 +36,13 @@ export default function Page() {
           </p>
         </div>
 
-        {/* Floating polaroid images — each has a frosted glass card behind the photo */}
+        {/* Floating polaroid images */}
 
         {/* Shoes — top-left, rotated -28° */}
-        <div className="absolute left-[8%] top-[20%]">
+        <div className="absolute left-[6%] top-[18%]">
           <div className="-rotate-[28deg]">
-            {/* Glass card */}
-            <div className="rounded-[5px] bg-white/30 backdrop-blur-[14px] shadow-2xl p-3">
-              {/* Photo */}
-              <div className="relative h-[157px] w-[120px] overflow-hidden rounded-[3px]">
+            <div className="rounded-[4px] bg-white shadow-2xl" style={{ padding: "6px 6px 22px 6px" }}>
+              <div className="relative h-[156px] w-[120px] overflow-hidden">
                 <Image src="/home/shoes.jpg" alt="Shoes" fill className="object-cover" />
               </div>
             </div>
@@ -52,12 +50,10 @@ export default function Page() {
         </div>
 
         {/* Jacket — right side, rotated +12° */}
-        <div className="absolute right-[4%] top-[36%]">
+        <div className="absolute right-[4%] top-[35%]">
           <div className="rotate-12">
-            {/* Glass card */}
-            <div className="rounded-[3px] bg-white/30 backdrop-blur-[9px] shadow-2xl p-3">
-              {/* Photo */}
-              <div className="relative h-[149px] w-[114px] overflow-hidden rounded-[2px]">
+            <div className="rounded-[3px] bg-white shadow-2xl" style={{ padding: "5px 5px 20px 5px" }}>
+              <div className="relative h-[149px] w-[114px] overflow-hidden">
                 <Image src="/home/jacket.jpg" alt="Jacket" fill className="object-cover" />
               </div>
             </div>
@@ -65,12 +61,10 @@ export default function Page() {
         </div>
 
         {/* Floral dress — lower-centre-left, rotated -16° */}
-        <div className="absolute left-[14%] top-[50%]">
+        <div className="absolute left-[12%] top-[48%]">
           <div className="-rotate-[16deg]">
-            {/* Glass card */}
-            <div className="rounded-[4px] bg-white/30 backdrop-blur-[13px] shadow-2xl p-3">
-              {/* Photo */}
-              <div className="relative h-[218px] w-[166px] overflow-hidden rounded-[2px]">
+            <div className="rounded-[4px] bg-white shadow-2xl" style={{ padding: "7px 7px 27px 7px" }}>
+              <div className="relative h-[217px] w-[166px] overflow-hidden">
                 <Image src="/home/dress.jpg" alt="Dress" fill className="object-cover" />
               </div>
             </div>
