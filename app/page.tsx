@@ -41,7 +41,7 @@ export default function Page() {
         {/* Shoes — top-left, rotated -28° */}
         <div className="absolute left-[6%] top-[18%]">
           <div className="-rotate-[28deg]">
-            <div className="rounded-[4px] bg-white shadow-2xl" style={{ padding: "6px 6px 22px 6px" }}>
+            <div className="rounded-[4px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "6px 6px 22px 6px" }}>
               <div className="relative h-[156px] w-[120px] overflow-hidden">
                 <Image src="/home/shoes.jpg" alt="Shoes" fill className="object-cover" />
               </div>
@@ -52,7 +52,7 @@ export default function Page() {
         {/* Jacket — right side, rotated +12° */}
         <div className="absolute right-[4%] top-[35%]">
           <div className="rotate-12">
-            <div className="rounded-[3px] bg-white shadow-2xl" style={{ padding: "5px 5px 20px 5px" }}>
+            <div className="rounded-[3px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "5px 5px 20px 5px" }}>
               <div className="relative h-[149px] w-[114px] overflow-hidden">
                 <Image src="/home/jacket.jpg" alt="Jacket" fill className="object-cover" />
               </div>
@@ -63,7 +63,7 @@ export default function Page() {
         {/* Floral dress — lower-centre-left, rotated -16° */}
         <div className="absolute left-[12%] top-[48%]">
           <div className="-rotate-[16deg]">
-            <div className="rounded-[4px] bg-white shadow-2xl" style={{ padding: "7px 7px 27px 7px" }}>
+            <div className="rounded-[4px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "7px 7px 27px 7px" }}>
               <div className="relative h-[217px] w-[166px] overflow-hidden">
                 <Image src="/home/dress.jpg" alt="Dress" fill className="object-cover" />
               </div>
