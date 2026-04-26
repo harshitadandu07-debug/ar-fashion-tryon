@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Instrument_Sans } from "next/font/google";
+import { Instrument_Serif, Instrument_Sans, Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { Agentation } from "agentation";
 import "./globals.css";
@@ -16,6 +16,18 @@ const instrumentSans = Instrument_Sans({
   variable: "--font-instrument-sans",
 });
 
+const bricolageGrotesque = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-bricolage",
+});
+
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-hanken",
+});
+
 export const metadata: Metadata = {
   title: "Double Take",
   description: "WebAR Spring 2026 fashion try-on",
@@ -27,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${instrumentSerif.variable} ${instrumentSans.variable}`}>
+    <html lang="en" className={`${instrumentSerif.variable} ${instrumentSans.variable} ${bricolageGrotesque.variable} ${hankenGrotesk.variable}`}>
       <body>
         {children}
         {process.env.NODE_ENV === "development" && <Agentation />}

@@ -1,61 +1,84 @@
+import Image from "next/image";
+import Link from "next/link";
+
 export default function Page() {
   return (
-    <main className="min-h-dvh bg-black text-white">
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 py-12">
+    <main className="relative min-h-dvh w-full overflow-hidden bg-black">
 
-        {/* Top brand */}
-        <header>
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
-            Double Take
-          </p>
-        </header>
+      {/* Full-screen background model photo */}
+      <Image
+        src="/home/bg.jpg"
+        alt=""
+        fill
+        priority
+        className="object-cover object-center"
+      />
 
-        {/* Hero */}
-        <section className="space-y-5">
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
-            <span className="text-xs font-medium text-white/70">
-              AR Try-On Live
-            </span>
-          </div>
+      {/* Dark gradient overlay — left-heavy as in design */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/30 to-transparent" />
 
-          <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight">
-            Try on Spring&nbsp;2026
-            <br />
-            before you buy.
-          </h1>
+      {/* Content wrapper — centred, max mobile width */}
+      <div className="relative mx-auto flex min-h-dvh max-w-[403px] flex-col">
 
-          <p className="text-sm leading-relaxed text-white/60">
-            Point your front camera at your face and browse this season&apos;s
-            looks — no app download, no sign-up. Just you and the look.
-          </p>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {["Front camera", "Instant AR", "No download"].map((f) => (
-              <span
-                key={f}
-                className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50"
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* CTAs */}
-        <section className="space-y-3">
-          <a
-            href="/looks"
-            className="block w-full rounded-2xl bg-white px-5 py-4 text-center text-sm font-semibold text-black"
+        {/* Title + tagline */}
+        <div className="pt-12 text-center">
+          <h1
+            className="text-[48px] font-bold leading-tight tracking-[-1px] text-white"
+            style={{ fontFamily: "var(--font-bricolage), sans-serif" }}
           >
-            Explore Fashion Trends
-          </a>
-          <p className="text-center text-xs text-white/30">
-            Best in good lighting · iPhone Safari &amp; Android Chrome
+            StyleCast
+          </h1>
+          <p
+            className="mt-1 text-[20px] leading-snug tracking-[-0.15px] text-white/90"
+            style={{ fontFamily: "var(--font-hanken), sans-serif" }}
+          >
+            &ldquo;Try trends in real time&rdquo;
           </p>
-        </section>
+        </div>
+
+        {/* Floating polaroid images */}
+
+        {/* Shoes — top-left, rotated -28° */}
+        <div className="absolute left-[8%] top-[20%]">
+          <div className="-rotate-[28deg]">
+            <div className="relative h-[157px] w-[120px] overflow-hidden rounded-[5px] bg-white/30 backdrop-blur-[14px] shadow-xl">
+              <Image src="/home/shoes.jpg" alt="Shoes" fill className="object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Jacket — right side, rotated +12° */}
+        <div className="absolute right-[4%] top-[36%]">
+          <div className="rotate-12">
+            <div className="relative h-[149px] w-[114px] overflow-hidden rounded-[3px] bg-white/30 backdrop-blur-[9px] shadow-xl">
+              <Image src="/home/jacket.jpg" alt="Jacket" fill className="object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* Floral dress — lower-centre-left, rotated -16° */}
+        <div className="absolute left-[14%] top-[50%]">
+          <div className="-rotate-[16deg]">
+            <div className="relative h-[218px] w-[166px] overflow-hidden rounded-[4px] bg-white/30 backdrop-blur-[13px] shadow-xl">
+              <Image src="/home/dress.jpg" alt="Dress" fill className="object-cover" />
+            </div>
+          </div>
+        </div>
+
+        {/* EXPLORE FASHION button — pinned to bottom */}
+        <div className="mt-auto px-5 pb-10">
+          <Link
+            href="/looks"
+            className="flex h-14 w-full items-center justify-center rounded-xl border border-white/70 bg-white/10 backdrop-blur-[39px]"
+          >
+            <span
+              className="text-[22px] font-bold tracking-wide text-white"
+              style={{ fontFamily: "var(--font-hanken), sans-serif" }}
+            >
+              EXPLORE FASHION
+            </span>
+          </Link>
+        </div>
 
       </div>
     </main>
