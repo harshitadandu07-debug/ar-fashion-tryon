@@ -22,19 +22,22 @@ type SceneRefs = {
 };
 
 export type UpdateSceneFn = (
-  torso:  TorsoPoints | null,
-  config: GarmentConfig | null,
-  W:      number,
-  H:      number,
-  conf:   number,
+  torso:        TorsoPoints | null,
+  config:       GarmentConfig | null,
+  W:            number,
+  H:            number,
+  conf:         number,
+  adjustOffset?: { x: number; y: number },
 ) => void;
 
 export function useGarmentScene(): {
   threeCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   updateScene:    UpdateSceneFn;
+  hasGarmentRef:  React.RefObject<boolean>;
 } {
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const refsRef        = useRef<SceneRefs | null>(null);
+  const hasGarmentRef  = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -74,7 +77,7 @@ export function useGarmentScene(): {
     };
   }, []);
 
-  const updateScene: UpdateSceneFn = (torso, config, W, H, conf) => {
+  const updateScene: UpdateSceneFn = (torso, config, W, H, conf, adjustOffset) => {
     const refs = refsRef.current;
     if (!refs || W === 0 || H === 0) return;
 
@@ -93,11 +96,13 @@ export function useGarmentScene(): {
       refs.activeModel = config.modelPath;
 
       while (garmentGrp.children.length) garmentGrp.remove(garmentGrp.children[0]);
+      hasGarmentRef.current = false;
 
       const cached = cache.get(config.modelPath);
       if (cached) {
         const clone = cached.clone();
         garmentGrp.add(clone);
+        hasGarmentRef.current = true;
         const box  = new THREE.Box3().setFromObject(clone);
         const size = new THREE.Vector3();
         box.getSize(size);
@@ -119,6 +124,7 @@ export function useGarmentScene(): {
           cache.set(config.modelPath, model);
           const clone = model.clone();
           garmentGrp.add(clone);
+          hasGarmentRef.current = true;
         });
       }
     }
@@ -139,6 +145,11 @@ export function useGarmentScene(): {
 
     garmentGrp.position.copy(t.position);
     garmentGrp.position.y += config.yOffset3d * scale;
+    // Apply user drag offset (ortho camera: 1 world unit = 1 canvas pixel; y-axis inverted)
+    if (adjustOffset) {
+      garmentGrp.position.x += adjustOffset.x;
+      garmentGrp.position.y -= adjustOffset.y;
+    }
     garmentGrp.rotation.z  = t.rotationZ;
     garmentGrp.scale.setScalar(scale);
 
@@ -153,5 +164,5 @@ export function useGarmentScene(): {
     renderer.render(scene, camera);
   };
 
-  return { threeCanvasRef, updateScene };
+  return { threeCanvasRef, updateScene, hasGarmentRef };
 }
