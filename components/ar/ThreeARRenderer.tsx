@@ -144,37 +144,30 @@ export default function ThreeARRenderer({
           wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
         }
         const baseline = wristBaselineRef.current;
-        if (
-          isAdjustModeRef.current &&
-          baseline &&
-          t?.lWrist &&
-          t?.rWrist
-        ) {
-          const { lWrist, rWrist } = t;
+        if (isAdjustModeRef.current && baseline) {
+          const lWrist = t?.lWrist ?? null;
+          const rWrist = t?.rWrist ?? null;
 
-          // Lock dominant wrist on first exit from deadzone; keep it locked to avoid
-          // cross-wrist delta noise that kills horizontal movement
-          if (!lockedWristRef.current) {
+          // Lock dominant wrist on first exit from deadzone — needs both wrists visible once
+          if (!lockedWristRef.current && lWrist && rWrist) {
             const lDist = Math.hypot(lWrist.x - baseline.lWrist.x, lWrist.y - baseline.lWrist.y);
             const rDist = Math.hypot(rWrist.x - baseline.rWrist.x, rWrist.y - baseline.rWrist.y);
             const candidate     = lDist > rDist ? "l" : "r";
             const candidateDisp = candidate === "l" ? lDist : rDist;
             if (candidateDisp >= WRIST_DEADZONE) {
               lockedWristRef.current = candidate;
-              prevWristRef.current   = null; // fresh prev after lock
+              prevWristRef.current   = null;
             }
           }
 
-          const locked = lockedWristRef.current;
-          if (!locked) {
-            // Still inside deadzone — wait for lock
-          } else {
-            const dominant = locked === "l" ? lWrist : rWrist;
-            const prev     = prevWristRef.current;
+          const locked  = lockedWristRef.current;
+          const dominant = locked === "l" ? lWrist : locked === "r" ? rWrist : null;
+          // Once locked, only the locked wrist needs to be visible — arm can drop without killing tracking
+          if (locked && dominant) {
+            const prev = prevWristRef.current;
             if (prev) {
-              // selfieMode: true — MediaPipe x is already in screen space; no negation needed
               const dx = (dominant.x - prev.x) * W;
-              const dy =  (dominant.y - prev.y) * H;
+              const dy = (dominant.y - prev.y) * H;
               onDragRef.current(dx, dy);
             }
             prevWristRef.current = dominant;

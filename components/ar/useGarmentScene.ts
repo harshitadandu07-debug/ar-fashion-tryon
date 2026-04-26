@@ -145,7 +145,7 @@ export function useGarmentScene(): {
     const scale = t.scaleFactor / refs.modelNaturalWidth;
 
     garmentGrp.position.copy(t.position);
-    garmentGrp.position.y += config.yOffset3d * scale;
+    garmentGrp.position.y += config.yOffset3d; // direct canvas-pixel offset (not scaled)
     // Apply user drag offset (ortho camera: 1 world unit = 1 canvas pixel; y-axis inverted)
     if (adjustOffset) {
       garmentGrp.position.x += adjustOffset.x;
