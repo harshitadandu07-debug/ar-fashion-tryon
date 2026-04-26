@@ -36,13 +36,17 @@ export default function Page() {
           </p>
         </div>
 
-        {/* Floating polaroid images */}
+        {/* Floating polaroid images — each has a frosted glass card behind the photo */}
 
         {/* Shoes — top-left, rotated -28° */}
         <div className="absolute left-[8%] top-[20%]">
           <div className="-rotate-[28deg]">
-            <div className="relative h-[157px] w-[120px] overflow-hidden rounded-[5px] bg-white/30 backdrop-blur-[14px] shadow-xl">
-              <Image src="/home/shoes.jpg" alt="Shoes" fill className="object-cover" />
+            {/* Glass card */}
+            <div className="rounded-[5px] bg-white/30 backdrop-blur-[14px] shadow-2xl p-3">
+              {/* Photo */}
+              <div className="relative h-[157px] w-[120px] overflow-hidden rounded-[3px]">
+                <Image src="/home/shoes.jpg" alt="Shoes" fill className="object-cover" />
+              </div>
             </div>
           </div>
         </div>
@@ -50,8 +54,12 @@ export default function Page() {
         {/* Jacket — right side, rotated +12° */}
         <div className="absolute right-[4%] top-[36%]">
           <div className="rotate-12">
-            <div className="relative h-[149px] w-[114px] overflow-hidden rounded-[3px] bg-white/30 backdrop-blur-[9px] shadow-xl">
-              <Image src="/home/jacket.jpg" alt="Jacket" fill className="object-cover" />
+            {/* Glass card */}
+            <div className="rounded-[3px] bg-white/30 backdrop-blur-[9px] shadow-2xl p-3">
+              {/* Photo */}
+              <div className="relative h-[149px] w-[114px] overflow-hidden rounded-[2px]">
+                <Image src="/home/jacket.jpg" alt="Jacket" fill className="object-cover" />
+              </div>
             </div>
           </div>
         </div>
@@ -59,8 +67,12 @@ export default function Page() {
         {/* Floral dress — lower-centre-left, rotated -16° */}
         <div className="absolute left-[14%] top-[50%]">
           <div className="-rotate-[16deg]">
-            <div className="relative h-[218px] w-[166px] overflow-hidden rounded-[4px] bg-white/30 backdrop-blur-[13px] shadow-xl">
-              <Image src="/home/dress.jpg" alt="Dress" fill className="object-cover" />
+            {/* Glass card */}
+            <div className="rounded-[4px] bg-white/30 backdrop-blur-[13px] shadow-2xl p-3">
+              {/* Photo */}
+              <div className="relative h-[218px] w-[166px] overflow-hidden rounded-[2px]">
+                <Image src="/home/dress.jpg" alt="Dress" fill className="object-cover" />
+              </div>
             </div>
           </div>
         </div>
