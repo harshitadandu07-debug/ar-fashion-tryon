@@ -4,10 +4,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Product } from "@/components/ui/ProductCard";
 import { usePoseTorso } from "@/components/ar/usePoseTorso";
+import type { TorsoPoint } from "@/components/ar/usePoseTorso";
 import { useGarmentScene } from "@/components/ar/useGarmentScene";
 import { getGarmentConfig } from "@/components/ar/garmentConfig";
 
 const CONFIDENCE_THRESHOLD = 0.55;
+const WRIST_DEADZONE       = 0.025; // normalised units — 2.5% of frame width filters body sway
 
 type Props = {
   videoRef:       React.RefObject<HTMLVideoElement | null>;
@@ -35,8 +37,9 @@ export default function ThreeARRenderer({
   const onDragRef                = useRef(onDrag);
   const onFirstOverlayRef        = useRef(onFirstOverlay);
   const hasTriggeredFirstOverlay = useRef(false);
-  const lastTouchRef             = useRef<{ x: number; y: number } | null>(null);
-  const touchCaptureRef          = useRef<HTMLDivElement>(null);
+  const isAdjustModeRef  = useRef(isAdjustMode);
+  const wristBaselineRef = useRef<{ lWrist: TorsoPoint; rWrist: TorsoPoint } | null>(null);
+  const prevWristRef     = useRef<TorsoPoint | null>(null);
 
   useEffect(() => { adjustOffsetRef.current       = adjustOffset;   }, [adjustOffset]);
   useEffect(() => { onDragRef.current             = onDrag;         }, [onDrag]);
@@ -44,15 +47,6 @@ export default function ThreeARRenderer({
   // Reset first-overlay trigger when product changes
   useEffect(() => { hasTriggeredFirstOverlay.current = false; }, [product]);
 
-  // Prevent iOS Safari from stealing the touch for page scroll during drag
-  useEffect(() => {
-    if (!isAdjustMode && !showFirstGuide) return;
-    const el = touchCaptureRef.current;
-    if (!el) return;
-    const prevent = (e: TouchEvent) => { e.preventDefault(); };
-    el.addEventListener("touchmove", prevent, { passive: false });
-    return () => el.removeEventListener("touchmove", prevent);
-  }, [isAdjustMode, showFirstGuide]);
 
   const { torso, confidence } = usePoseTorso(videoRef, noopSwipe, stableStatus);
 
@@ -60,6 +54,21 @@ export default function ThreeARRenderer({
   const confidenceRef = useRef(confidence);
   useEffect(() => { torsoRef.current      = torso;      }, [torso]);
   useEffect(() => { confidenceRef.current = confidence; }, [confidence]);
+
+  // Snapshot wrist baseline when adjust mode activates; clear refs on deactivation
+  useEffect(() => {
+    isAdjustModeRef.current = isAdjustMode;
+    if (isAdjustMode) {
+      const t = torsoRef.current;
+      if (t?.lWrist && t?.rWrist) {
+        wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
+      }
+      prevWristRef.current = null;
+    } else {
+      wristBaselineRef.current = null;
+      prevWristRef.current     = null;
+    }
+  }, [isAdjustMode]);
 
   const [showGuidance, setShowGuidance] = useState(true);
   useEffect(() => { setShowGuidance(confidence < CONFIDENCE_THRESHOLD); }, [confidence]);
@@ -125,6 +134,46 @@ export default function ThreeARRenderer({
           onFirstOverlayRef.current();
         }
 
+        // ── Wrist tracking (adjust mode only) ─────────────────────────
+        const baseline = wristBaselineRef.current;
+        const t        = torsoRef.current;
+        if (
+          isAdjustModeRef.current &&
+          baseline &&
+          t?.lWrist &&
+          t?.rWrist
+        ) {
+          const { lWrist, rWrist } = t;
+          const lDist = Math.hypot(
+            lWrist.x - baseline.lWrist.x,
+            lWrist.y - baseline.lWrist.y,
+          );
+          const rDist = Math.hypot(
+            rWrist.x - baseline.rWrist.x,
+            rWrist.y - baseline.rWrist.y,
+          );
+          const dominant     = lDist > rDist ? lWrist : rWrist;
+          const dominantBase = lDist > rDist ? baseline.lWrist : baseline.rWrist;
+          const totalDisp    = Math.hypot(
+            dominant.x - dominantBase.x,
+            dominant.y - dominantBase.y,
+          );
+
+          if (totalDisp < WRIST_DEADZONE) {
+            // Inside deadzone — reset prev so no jump when user re-engages
+            prevWristRef.current = null;
+          } else {
+            const prev = prevWristRef.current;
+            if (prev) {
+              // Negate x: mirrored video — physical right = MediaPipe x-decrease = screen right
+              const dx = -(dominant.x - prev.x) * W;
+              const dy =  (dominant.y - prev.y) * H;
+              onDragRef.current(dx, dy);
+            }
+            prevWristRef.current = dominant;
+          }
+        }
+
         // 3. Composite Three.js canvas on top
         const threeCanvas = threeCanvasRef.current;
         if (threeCanvas && threeCanvas.width > 0) {
@@ -140,43 +189,16 @@ export default function ThreeARRenderer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateScene]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !lastTouchRef.current) return;
-    const touch  = e.touches[0];
-    const rect   = canvas.getBoundingClientRect();
-    // Convert CSS-pixel deltas to canvas-pixel deltas (canvas intrinsic size ≠ displayed size)
-    const scaleX = canvas.width  / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const dx = (touch.clientX - lastTouchRef.current.x) * scaleX;
-    const dy = (touch.clientY - lastTouchRef.current.y) * scaleY;
-    lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
-    onDragRef.current(dx, dy);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    lastTouchRef.current = null;
-  }, []);
 
   return (
     <>
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
 
-      {/* Touch-capture layer — active during adjust mode or first guide */}
+      {/* Adjust mode overlay — active during adjust mode or first guide */}
       {(isAdjustMode || showFirstGuide) && (
         <div
-          ref={touchCaptureRef}
-          className="absolute inset-0 z-20"
+          className="absolute inset-0 z-20 pointer-events-none"
           aria-hidden="true"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
         >
           {showFirstGuide && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -203,7 +225,7 @@ export default function ThreeARRenderer({
                   </svg>
                 </div>
                 <div className="rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-sm">
-                  <span className="text-xs font-semibold text-white">Touch screen &amp; drag to adjust</span>
+                  <span className="text-xs font-semibold text-white">Move your arm to adjust</span>
                 </div>
                 <span className="text-[10px] text-white/45">Dismisses automatically</span>
               </div>
@@ -212,7 +234,7 @@ export default function ThreeARRenderer({
 
           {isAdjustMode && !showFirstGuide && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 backdrop-blur-sm pointer-events-none">
-              <span className="text-xs text-white/80">Touch screen &amp; drag to reposition</span>
+              <span className="text-xs text-white/80">Move your arm to reposition</span>
             </div>
           )}
         </div>
