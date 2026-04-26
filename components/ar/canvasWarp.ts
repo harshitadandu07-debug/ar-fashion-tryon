@@ -1,4 +1,4 @@
-import type { TorsoPoints } from "./usePoseTorso";
+import type { TorsoPoint, TorsoPoints } from "./usePoseTorso";
 import type { GarmentCalibration } from "./garmentConfig";
 
 /**
@@ -12,6 +12,7 @@ import type { GarmentCalibration } from "./garmentConfig";
  * @param canvasW    - canvas width in pixels
  * @param canvasH    - canvas height in pixels
  * @param alpha      - global draw opacity (0–1, used to fade when confidence is low)
+ * @param adjustOffset - user-applied pixel delta (touch drag) added to the shoulder midpoint before rotation; defaults to {x:0, y:0}
  */
 export function drawGarmentAffine(
   ctx:          CanvasRenderingContext2D,
@@ -21,7 +22,7 @@ export function drawGarmentAffine(
   canvasW:      number,
   canvasH:      number,
   alpha = 1,
-  adjustOffset: { x: number; y: number } = { x: 0, y: 0 },
+  adjustOffset: TorsoPoint = { x: 0, y: 0 },
 ): void {
   const { lShoulder, rShoulder, lHip, rHip } = torso;
 
