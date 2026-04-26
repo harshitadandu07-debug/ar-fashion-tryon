@@ -39,6 +39,7 @@ export default function ThreeARRenderer({
   const hasTriggeredFirstOverlay = useRef(false);
   const isAdjustModeRef  = useRef(isAdjustMode);
   const wristBaselineRef = useRef<{ lWrist: TorsoPoint; rWrist: TorsoPoint } | null>(null);
+  const lockedWristRef   = useRef<"l" | "r" | null>(null); // locked once dominant exits deadzone
   const prevWristRef     = useRef<TorsoPoint | null>(null);
 
   useEffect(() => { adjustOffsetRef.current       = adjustOffset;   }, [adjustOffset]);
@@ -63,10 +64,12 @@ export default function ThreeARRenderer({
       if (t?.lWrist && t?.rWrist) {
         wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
       }
-      prevWristRef.current = null;
+      prevWristRef.current   = null;
+      lockedWristRef.current = null;
     } else {
       wristBaselineRef.current = null;
       prevWristRef.current     = null;
+      lockedWristRef.current   = null;
     }
   }, [isAdjustMode]);
 
@@ -148,26 +151,26 @@ export default function ThreeARRenderer({
           t?.rWrist
         ) {
           const { lWrist, rWrist } = t;
-          const lDist = Math.hypot(
-            lWrist.x - baseline.lWrist.x,
-            lWrist.y - baseline.lWrist.y,
-          );
-          const rDist = Math.hypot(
-            rWrist.x - baseline.rWrist.x,
-            rWrist.y - baseline.rWrist.y,
-          );
-          const dominant     = lDist > rDist ? lWrist : rWrist;
-          const dominantBase = lDist > rDist ? baseline.lWrist : baseline.rWrist;
-          const totalDisp    = Math.hypot(
-            dominant.x - dominantBase.x,
-            dominant.y - dominantBase.y,
-          );
 
-          if (totalDisp < WRIST_DEADZONE) {
-            // Inside deadzone — reset prev so no jump when user re-engages
-            prevWristRef.current = null;
+          // Lock dominant wrist on first exit from deadzone; keep it locked to avoid
+          // cross-wrist delta noise that kills horizontal movement
+          if (!lockedWristRef.current) {
+            const lDist = Math.hypot(lWrist.x - baseline.lWrist.x, lWrist.y - baseline.lWrist.y);
+            const rDist = Math.hypot(rWrist.x - baseline.rWrist.x, rWrist.y - baseline.rWrist.y);
+            const candidate     = lDist > rDist ? "l" : "r";
+            const candidateDisp = candidate === "l" ? lDist : rDist;
+            if (candidateDisp >= WRIST_DEADZONE) {
+              lockedWristRef.current = candidate;
+              prevWristRef.current   = null; // fresh prev after lock
+            }
+          }
+
+          const locked = lockedWristRef.current;
+          if (!locked) {
+            // Still inside deadzone — wait for lock
           } else {
-            const prev = prevWristRef.current;
+            const dominant = locked === "l" ? lWrist : rWrist;
+            const prev     = prevWristRef.current;
             if (prev) {
               // Negate x: mirrored video — physical right = MediaPipe x-decrease = screen right
               const dx = -(dominant.x - prev.x) * W;
