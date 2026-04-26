@@ -20,6 +20,12 @@ export default function CameraOverlay({ product, onClose }: Props) {
   const [cameraState, setCameraState] = useState<CameraState>("checking");
   const [mpStatus, setMpStatus]       = useState("Waiting for MediaPipe…");
 
+  const [adjustOffset,           setAdjustOffset]           = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isAdjustMode,           setIsAdjustMode]           = useState(false);
+  const [showFirstGuide,         setShowFirstGuide]         = useState(false);
+  const [firstGuideHasBeenShown, setFirstGuideHasBeenShown] = useState(false);
+  const adjustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // On mount: check if permission was already granted before
   useEffect(() => {
     const alreadyGranted = localStorage.getItem(PERMISSION_KEY) === "true";
@@ -30,6 +36,7 @@ export default function CameraOverlay({ product, onClose }: Props) {
     }
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -52,6 +59,26 @@ export default function CameraOverlay({ product, onClose }: Props) {
   }
 
   const stableStatus = useCallback((s: string) => setMpStatus(s), []);
+
+  const startAdjustTimer = useCallback(() => {
+    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+    adjustTimerRef.current = setTimeout(() => {
+      setIsAdjustMode(false);
+      setShowFirstGuide(false);
+    }, 3000);
+  }, []);
+
+  const handleFirstOverlay = useCallback(() => {
+    setShowFirstGuide(true);
+    setIsAdjustMode(true);
+    setFirstGuideHasBeenShown(true);
+    startAdjustTimer();
+  }, [startAdjustTimer]);
+
+  const handleDrag = useCallback((dx: number, dy: number) => {
+    setAdjustOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    startAdjustTimer();
+  }, [startAdjustTimer]);
 
   // ── Permission screen ──────────────────────────────────────────
   if (cameraState === "requesting") {
@@ -123,7 +150,16 @@ export default function CameraOverlay({ product, onClose }: Props) {
 
       {/* AR canvas + guidance overlay */}
       {cameraState === "granted" && (
-        <ThreeARRenderer videoRef={videoRef} product={product} onStatus={stableStatus} />
+        <ThreeARRenderer
+          videoRef={videoRef}
+          product={product}
+          onStatus={stableStatus}
+          adjustOffset={adjustOffset}
+          isAdjustMode={isAdjustMode}
+          showFirstGuide={showFirstGuide}
+          onDrag={handleDrag}
+          onFirstOverlay={handleFirstOverlay}
+        />
       )}
 
       {/* Status pill */}
@@ -139,6 +175,23 @@ export default function CameraOverlay({ product, onClose }: Props) {
       >
         ✕
       </button>
+
+      {/* Adjust fit button — appears after first guide has been dismissed */}
+      {firstGuideHasBeenShown && !showFirstGuide && !isAdjustMode && (
+        <button
+          onClick={() => {
+            setIsAdjustMode(true);
+            startAdjustTimer();
+          }}
+          className="absolute left-4 top-20 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
+          aria-label="Adjust outfit fit"
+        >
+          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+          </svg>
+          <span className="text-xs font-semibold text-white">Adjust fit</span>
+        </button>
+      )}
     </div>
   );
 }
