@@ -73,6 +73,7 @@ export function useGarmentScene(): {
     return () => {
       renderer.dispose();
       renderer.domElement.remove();
+      hasGarmentRef.current = false;
       refsRef.current = null;
     };
   }, []);
