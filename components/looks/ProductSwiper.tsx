@@ -8,6 +8,7 @@ type Product = {
   name:      string;
   season:    string;
   imagePath: string;
+  imageFit:  "contain" | "cover";
   gradient:  string;
 };
 
@@ -17,6 +18,7 @@ const PRODUCTS: Product[] = [
     name:      "Mode Sportif",
     season:    "SPRING 2026",
     imagePath: "/products/product1.png",
+    imageFit:  "contain",
     gradient:  "radial-gradient(ellipse at 20% 80%, #3b1f6e 0%, #0a0a14 55%), radial-gradient(ellipse at 80% 20%, #1a0f3d 0%, transparent 60%)",
   },
   {
@@ -24,6 +26,7 @@ const PRODUCTS: Product[] = [
     name:      "Tiered Dresses",
     season:    "SPRING 2026",
     imagePath: "/products/product2.png",
+    imageFit:  "cover",
     gradient:  "radial-gradient(ellipse at 25% 75%, #5c1a3a 0%, #0a0a14 55%), radial-gradient(ellipse at 75% 25%, #1f0d3b 0%, transparent 60%)",
   },
 ];
@@ -76,7 +79,7 @@ export default function ProductSwiper({ onTryLook }: Props) {
               alt={product.name}
               fill
               priority
-              className="object-cover object-center"
+              className={`${product.imageFit === "cover" ? "object-cover" : "object-contain"} object-center`}
             />
             {/* Corner sheen only — no blur */}
             <div
