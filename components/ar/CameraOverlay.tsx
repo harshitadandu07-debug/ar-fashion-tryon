@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ThreeARRenderer from "@/components/ar/ThreeARRenderer";
+import { useFistDetector } from "@/components/ar/useFistDetector";
 import type { Product } from "@/components/ui/ProductCard";
 
 const PERMISSION_KEY = "dt_camera_permission_granted";
@@ -18,25 +19,35 @@ export default function CameraOverlay({ product, onClose }: Props) {
   const streamRef = useRef<MediaStream | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraState>("checking");
-  const [mpStatus, setMpStatus]       = useState("Waiting for MediaPipe…");
 
   const [adjustOffset,           setAdjustOffset]           = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isAdjustMode,           setIsAdjustMode]           = useState(false);
   const [showFirstGuide,         setShowFirstGuide]         = useState(false);
   const [firstGuideHasBeenShown, setFirstGuideHasBeenShown] = useState(false);
-  const adjustTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lockedToast,            setLockedToast]            = useState(false);
+  const adjustTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // On mount: check if permission was already granted before
+  // Lazily load MediaPipe Hands CDN (for fist detection) only while overlay is open
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window as any).Hands) return; // already loaded
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js";
+    s.crossOrigin = "anonymous";
+    document.head.appendChild(s);
+    return () => { try { document.head.removeChild(s); } catch {} };
+  }, []);
+
+  // Camera permission / stream
   useEffect(() => {
     const alreadyGranted = localStorage.getItem(PERMISSION_KEY) === "true";
-    if (alreadyGranted) {
-      startCamera();
-    } else {
-      setCameraState("requesting");
-    }
+    if (alreadyGranted) startCamera();
+    else setCameraState("requesting");
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+      if (toastTimerRef.current)  clearTimeout(toastTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -44,10 +55,7 @@ export default function CameraOverlay({ product, onClose }: Props) {
   async function startCamera() {
     setCameraState("checking");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       localStorage.setItem(PERMISSION_KEY, "true");
@@ -58,17 +66,13 @@ export default function CameraOverlay({ product, onClose }: Props) {
     }
   }
 
-  const stableStatus = useCallback((s: string) => setMpStatus(s), []);
-
+  // ── Adjust-mode timer: 4 s idle → snap outfit back to body ──────
   const startAdjustTimer = useCallback(() => {
     if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
     adjustTimerRef.current = setTimeout(() => {
       setIsAdjustMode(false);
-      // If the first-time guide was still showing, snap garment back to auto-detected body position
-      setShowFirstGuide((wasShowing) => {
-        if (wasShowing) setAdjustOffset({ x: 0, y: 0 });
-        return false;
-      });
+      setShowFirstGuide(false);
+      setAdjustOffset({ x: 0, y: 0 }); // always snap to auto-detected body position on idle
     }, 4000);
   }, []);
 
@@ -89,18 +93,26 @@ export default function CameraOverlay({ product, onClose }: Props) {
     startAdjustTimer();
   }, [startAdjustTimer]);
 
-  // ── Permission screen ──────────────────────────────────────────
+  // ── Fist gesture: lock outfit position ──────────────────────────
+  const handleFistLocked = useCallback(() => {
+    if (!isAdjustMode) return;
+    // Cancel the auto-snap timer so the offset stays exactly where the user placed it
+    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
+    setIsAdjustMode(false);
+    setShowFirstGuide(false);
+    // Show "Position locked" toast briefly
+    setLockedToast(true);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setLockedToast(false), 2000);
+  }, [isAdjustMode]);
+
+  useFistDetector(videoRef, handleFistLocked, isAdjustMode);
+
+  // ── Permission screens ───────────────────────────────────────────
   if (cameraState === "requesting") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black px-6 text-white animate-in slide-in-from-bottom duration-300">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
-          aria-label="Close"
-        >
-          ✕
-        </button>
-
+        <button onClick={onClose} className="absolute right-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Close">✕</button>
         <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
           <div className="absolute inset-0 animate-ping rounded-full bg-white/10" />
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
@@ -110,19 +122,11 @@ export default function CameraOverlay({ product, onClose }: Props) {
             </svg>
           </div>
         </div>
-
         <h2 className="mb-3 text-2xl font-semibold">Enable your camera</h2>
         <p className="mb-10 text-center text-sm leading-relaxed text-white/60">
-          We need camera access to try on <span className="text-white font-medium">{product.name}</span> live on your body.
-          Your feed never leaves your device.
+          We need camera access to try on <span className="text-white font-medium">{product.name}</span> live on your body. Your feed never leaves your device.
         </p>
-
-        <button
-          onClick={startCamera}
-          className="w-full max-w-xs rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-black"
-        >
-          Allow camera
-        </button>
+        <button onClick={startCamera} className="w-full max-w-xs rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-black">Allow camera</button>
       </div>
     );
   }
@@ -130,39 +134,24 @@ export default function CameraOverlay({ product, onClose }: Props) {
   if (cameraState === "denied") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black px-6 text-white animate-in slide-in-from-bottom duration-300">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
-          aria-label="Close"
-        >
-          ✕
-        </button>
+        <button onClick={onClose} className="absolute right-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Close">✕</button>
         <h2 className="mb-2 text-2xl font-semibold">Camera blocked</h2>
-        <p className="mb-6 text-center text-sm text-white/60">
-          Allow camera access in your browser settings and try again.
-        </p>
-        <button
-          onClick={startCamera}
-          className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black"
-        >
-          Try again
-        </button>
+        <p className="mb-6 text-center text-sm text-white/60">Allow camera access in your browser settings and try again.</p>
+        <button onClick={startCamera} className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black">Try again</button>
       </div>
     );
   }
 
-  // ── Live AR session ────────────────────────────────────────────
+  // ── Live AR session ──────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 bg-black animate-in slide-in-from-bottom duration-300">
-      {/* Hidden video — feeds MediaPipe + ThreeARRenderer */}
       <video ref={videoRef} autoPlay playsInline muted className="absolute opacity-0 pointer-events-none" />
 
-      {/* AR canvas + guidance overlay */}
       {cameraState === "granted" && (
         <ThreeARRenderer
           videoRef={videoRef}
           product={product}
-          onStatus={stableStatus}
+          onStatus={() => {}}
           adjustOffset={adjustOffset}
           isAdjustMode={isAdjustMode}
           showFirstGuide={showFirstGuide}
@@ -171,27 +160,31 @@ export default function CameraOverlay({ product, onClose }: Props) {
         />
       )}
 
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute right-4 top-12 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
-        aria-label="Close"
-      >
-        ✕
-      </button>
+      {/* Close */}
+      <button onClick={onClose} className="absolute right-4 top-12 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm" aria-label="Close">✕</button>
 
-      {/* Adjust fit button — appears after first guide has been dismissed */}
+      {/* Adjust fit button */}
       {firstGuideHasBeenShown && !showFirstGuide && !isAdjustMode && (
-        <button
-          onClick={handleAdjustFit}
-          className="absolute left-4 top-24 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
-          aria-label="Adjust outfit fit"
-        >
+        <button onClick={handleAdjustFit} className="absolute left-4 top-12 z-20 flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm" aria-label="Adjust outfit fit">
           <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
           </svg>
           <span className="text-xs font-semibold text-white">Adjust fit</span>
         </button>
+      )}
+
+      {/* Fist-lock hint — shown while in adjust mode */}
+      {isAdjustMode && !showFirstGuide && (
+        <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-4 py-1.5 backdrop-blur-sm">
+          <span className="text-xs text-white/70">✊ Close fist to lock position</span>
+        </div>
+      )}
+
+      {/* "Position locked" toast */}
+      {lockedToast && (
+        <div className="absolute bottom-8 left-1/2 z-30 -translate-x-1/2 rounded-full bg-white/20 px-5 py-2 backdrop-blur-md">
+          <span className="text-sm font-semibold text-white">✓ Position locked</span>
+        </div>
       )}
     </div>
   );
