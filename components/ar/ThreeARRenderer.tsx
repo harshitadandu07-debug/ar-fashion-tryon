@@ -207,18 +207,18 @@ export default function ThreeARRenderer({
           {showFirstGuide && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="flex flex-col items-center gap-3">
+                {/* Directional arrows around the hand emoji */}
                 <div className="flex items-center gap-4">
                   <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <polyline points="15,18 9,12 15,6" />
                   </svg>
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-1">
                     <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <polyline points="18,15 12,9 6,15" />
                     </svg>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#6366f1">
-                        <path d="M9 11.24V7.5a2.5 2.5 0 015 0v3.74c1.21-.81 2-2.18 2-3.74a4 4 0 00-8 0c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6.5a1.5 1.5 0 00-3 0V14l-3.12-.65a.5.5 0 00-.48.13l-.7.71 4.5 4.68A4.98 4.98 0 0014 21h3.73a1 1 0 00.98-.8l.67-3.48a1 1 0 00-.54-1.05z"/>
-                      </svg>
+                    {/* Raised-hand emoji — clearly signals "show your palm" */}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-3xl">
+                      ✋
                     </div>
                     <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <polyline points="6,9 12,15 18,9" />
@@ -229,7 +229,7 @@ export default function ThreeARRenderer({
                   </svg>
                 </div>
                 <div className="rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-sm">
-                  <span className="text-xs font-semibold text-white">Move your arm to adjust</span>
+                  <span className="text-xs font-semibold text-white">Raise your palm &amp; move to adjust</span>
                 </div>
                 <span className="text-[10px] text-white/45">Dismisses automatically</span>
               </div>
