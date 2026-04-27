@@ -2,16 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import dynamic from "next/dynamic";
-
-const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
-
 type Product = {
   id:        number;
   name:      string;
   season:    string;
-  imagePath?: string;
-  modelPath?: string;
+  imagePath: string;
   gradient:  string;
 };
 
@@ -20,7 +15,7 @@ const PRODUCTS: Product[] = [
     id:        1,
     name:      "Mode Sportif",
     season:    "SPRING 2026",
-    modelPath: "/models/jacket.glb",
+    imagePath: "/products/product1.png",
     gradient:  "radial-gradient(ellipse at 20% 80%, #3b1f6e 0%, #0a0a14 55%), radial-gradient(ellipse at 80% 20%, #1a0f3d 0%, transparent 60%)",
   },
   {
@@ -73,21 +68,10 @@ export default function ProductSwiper({ onTryLook }: Props) {
             <div className="absolute inset-0 z-10 rounded-[22px] backdrop-blur-[10px]"
                  style={{ background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)" }} />
 
-            {/* 3D model or static image */}
+            {/* Product image */}
             <div className="relative h-full w-full">
-              {product.modelPath ? (
-                <ModelViewer modelPath={product.modelPath} />
-              ) : product.imagePath ? (
-                <Image src={product.imagePath} alt={product.name} fill className="object-contain object-center" priority />
-              ) : null}
+              <Image src={product.imagePath} alt={product.name} fill className="object-contain object-center" priority />
             </div>
-
-            {/* Drag hint */}
-            {product.modelPath && (
-              <div className="absolute bottom-2.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/45 px-3 py-0.5 backdrop-blur-sm">
-                <span className="text-[10px] tracking-wide text-white/65">↻ drag to rotate</span>
-              </div>
-            )}
 
             <div className="pointer-events-none absolute inset-[-2px] z-10 rounded-[inherit] shadow-[inset_-5px_-5px_250px_0px_rgba(255,255,255,0.04)]" />
           </div>
@@ -117,7 +101,7 @@ export default function ProductSwiper({ onTryLook }: Props) {
             className="flex h-14 w-full items-center justify-center rounded-xl border border-white/60 bg-white/10 backdrop-blur-[39px] active:scale-[0.97] transition-transform"
           >
             <span className="text-[20px] font-bold tracking-wide text-white" style={{ fontFamily: "var(--font-hanken), sans-serif" }}>
-              EXPLORE FASHION
+              Try this look
             </span>
           </button>
         </div>
