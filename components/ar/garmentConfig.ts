@@ -23,6 +23,7 @@ export type GarmentConfig = {
   garmentType:       GarmentType;
   widthMultiplier3d: number;
   yOffset3d:         number;
+  rotationX?:        number; // radians — corrects model orientation if GLB is rotated
   anchors:           GarmentAnchor;
   calibration:       GarmentCalibration;
 };
@@ -60,7 +61,7 @@ export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
     modelPath:         "/models/dress.glb",
     garmentType:       "full",
     widthMultiplier3d: 1.6,
-    yOffset3d:         -380, // px: move dress down so top aligns with shoulders
+    yOffset3d:         -100, // px: gentle downward shift from shoulder midpoint
     anchors:           DEFAULT_ANCHORS,
     calibration:       DEFAULT_CALIBRATION,
   },
