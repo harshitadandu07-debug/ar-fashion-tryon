@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+
 type Product = {
   id:        number;
   name:      string;
@@ -31,16 +32,14 @@ type Props = { onTryLook: (productId: number) => void };
 
 export default function ProductSwiper({ onTryLook }: Props) {
   const [index, setIndex] = useState(0);
-
   const prev = () => setIndex((i) => (i - 1 + PRODUCTS.length) % PRODUCTS.length);
   const next = () => setIndex((i) => (i + 1) % PRODUCTS.length);
-
   const product = PRODUCTS[index];
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden">
 
-      {/* Gradient + noise background */}
+      {/* Background */}
       <div className="absolute inset-0 transition-all duration-700" style={{ background: product.gradient }} />
       <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.18]" aria-hidden="true">
         <filter id="grain">
@@ -50,50 +49,61 @@ export default function ProductSwiper({ onTryLook }: Props) {
         <rect width="100%" height="100%" filter="url(#grain)" />
       </svg>
 
-      {/* Mid arrows — always vertically centred, never block content */}
-      <button onClick={prev} aria-label="Previous look" className="absolute left-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">‹</button>
-      <button onClick={next} aria-label="Next look"     className="absolute right-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">›</button>
+      {/* Arrows */}
+      <button onClick={prev} aria-label="Previous look"
+        className="absolute left-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">‹</button>
+      <button onClick={next} aria-label="Next look"
+        className="absolute right-4 top-1/2 z-30 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">›</button>
 
-      {/* ── Flex column fills the screen; button always at bottom ── */}
-      <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-between px-8 pt-[7%]"
-           style={{ paddingBottom: "max(28px, env(safe-area-inset-bottom, 28px))" }}>
+      {/* Main content — centred column, space between card and button */}
+      <div
+        className="relative z-10 mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-between px-8"
+        style={{ paddingTop: "7dvh", paddingBottom: "max(28px, env(safe-area-inset-bottom, 28px))" }}
+      >
 
-        {/* Phone mockup — height capped so it never crowds the button */}
-        <div className="flex flex-col items-center">
+        {/* Card + labels */}
+        <div className="flex w-full flex-col items-center gap-4">
+
+          {/* Glass card */}
           <div
-            className="relative overflow-hidden rounded-[22px] border-2 border-white/80 shadow-[0_0_50px_rgba(0,0,0,0.55)]"
-            style={{ height: "min(370px, 47dvh)", aspectRatio: "291 / 401" }}
+            className="relative overflow-hidden rounded-[22px] border-2 border-white/70 shadow-[0_0_50px_rgba(0,0,0,0.55)]"
+            style={{ height: "min(370px,47dvh)", width: "calc(min(370px,47dvh) * 291 / 401)" }}
           >
-            {/* Product image — z-10 so it sits above the edge overlays */}
-            <div className="relative z-10 flex h-full w-full items-center justify-center">
-              <Image
-                src={product.imagePath}
-                alt={product.name}
-                fill
-                className="object-contain"
-                style={{ objectPosition: "center center" }}
-                priority
-              />
-            </div>
-
-            {/* Subtle corner highlight — no blur so it never fogs the image */}
-            <div className="pointer-events-none absolute inset-0 z-20 rounded-[22px]"
-                 style={{ background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 55%)" }} />
-            <div className="pointer-events-none absolute inset-[-2px] z-20 rounded-[inherit] shadow-[inset_-5px_-5px_250px_0px_rgba(255,255,255,0.04)]" />
+            {/* Crisp product image — absolutely fills the card, centred */}
+            <Image
+              key={product.imagePath}
+              src={product.imagePath}
+              alt={product.name}
+              fill
+              priority
+              className="object-contain object-center"
+            />
+            {/* Corner sheen only — no blur */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-[22px]"
+              style={{ background: "radial-gradient(ellipse at 10% 10%, rgba(255,255,255,0.10) 0%, transparent 55%)" }}
+            />
           </div>
 
-          {/* Season + name */}
-          <p className="mt-4 text-[12px] tracking-[0.1em] text-white/55" style={{ fontFamily: "var(--font-hanken), sans-serif" }}>
-            {product.season}
-          </p>
-          <p className="mt-0.5 text-[26px] font-bold leading-tight tracking-[-0.3px] text-white" style={{ fontFamily: "var(--font-bricolage), sans-serif" }}>
-            {product.name}
-          </p>
+          {/* Season + name — both centred */}
+          <div className="flex flex-col items-center gap-0.5 text-center">
+            <p
+              className="text-[12px] tracking-[0.1em] text-white/55"
+              style={{ fontFamily: "var(--font-hanken), sans-serif" }}
+            >
+              {product.season}
+            </p>
+            <p
+              className="text-[26px] font-bold leading-tight tracking-[-0.3px] text-white"
+              style={{ fontFamily: "var(--font-bricolage), sans-serif" }}
+            >
+              {product.name}
+            </p>
+          </div>
         </div>
 
-        {/* ── Bottom group: dots + button ── */}
+        {/* Dots + button */}
         <div className="flex w-full flex-col items-center gap-5">
-          {/* Dot indicator */}
           <div className="flex gap-2">
             {PRODUCTS.map((_, i) => (
               <button key={i} onClick={() => setIndex(i)}
@@ -101,19 +111,20 @@ export default function ProductSwiper({ onTryLook }: Props) {
             ))}
           </div>
 
-          {/* EXPLORE FASHION — 56 px tall (≥ 44 px a11y min) */}
           <button
             onClick={() => onTryLook(product.id)}
-            className="flex h-14 w-full items-center justify-center rounded-xl border border-white/60 bg-white/10 backdrop-blur-[39px] active:scale-[0.97] transition-transform"
+            className="flex h-14 w-full items-center justify-center rounded-xl border border-white/60 bg-white/10 backdrop-blur-[39px] transition-transform active:scale-[0.97]"
           >
-            <span className="text-[20px] font-bold tracking-wide text-white" style={{ fontFamily: "var(--font-hanken), sans-serif" }}>
+            <span
+              className="text-[20px] font-bold tracking-wide text-white"
+              style={{ fontFamily: "var(--font-hanken), sans-serif" }}
+            >
               Try this look
             </span>
           </button>
         </div>
 
       </div>
-
     </div>
   );
 }
