@@ -37,10 +37,9 @@ export default function ThreeARRenderer({
   const onDragRef                = useRef(onDrag);
   const onFirstOverlayRef        = useRef(onFirstOverlay);
   const hasTriggeredFirstOverlay = useRef(false);
-  const isAdjustModeRef  = useRef(isAdjustMode);
-  const wristBaselineRef = useRef<{ lWrist: TorsoPoint; rWrist: TorsoPoint } | null>(null);
-  const lockedWristRef   = useRef<"l" | "r" | null>(null); // locked once dominant exits deadzone
-  const prevWristRef     = useRef<TorsoPoint | null>(null);
+  const isAdjustModeRef = useRef(isAdjustMode);
+  const lockedWristRef  = useRef<"l" | "r" | null>(null);
+  const prevWristRef    = useRef<TorsoPoint | null>(null);
 
   useEffect(() => { adjustOffsetRef.current       = adjustOffset;   }, [adjustOffset]);
   useEffect(() => { onDragRef.current             = onDrag;         }, [onDrag]);
@@ -56,20 +55,11 @@ export default function ThreeARRenderer({
   useEffect(() => { torsoRef.current      = torso;      }, [torso]);
   useEffect(() => { confidenceRef.current = confidence; }, [confidence]);
 
-  // Snapshot wrist baseline when adjust mode activates; clear refs on deactivation
   useEffect(() => {
     isAdjustModeRef.current = isAdjustMode;
-    if (isAdjustMode) {
-      const t = torsoRef.current;
-      if (t?.lWrist && t?.rWrist) {
-        wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
-      }
-      prevWristRef.current   = null;
+    if (!isAdjustMode) {
       lockedWristRef.current = null;
-    } else {
-      wristBaselineRef.current = null;
-      prevWristRef.current     = null;
-      lockedWristRef.current   = null;
+      prevWristRef.current   = null;
     }
   }, [isAdjustMode]);
 
@@ -138,39 +128,34 @@ export default function ThreeARRenderer({
         }
 
         // ── Wrist tracking (adjust mode only) ─────────────────────────
-        const t = torsoRef.current;
-        // Capture baseline lazily if wrists weren't visible when adjust mode activated
-        if (isAdjustModeRef.current && !wristBaselineRef.current && t?.lWrist && t?.rWrist) {
-          wristBaselineRef.current = { lWrist: t.lWrist, rWrist: t.rWrist };
-        }
-        const baseline = wristBaselineRef.current;
-        if (isAdjustModeRef.current && baseline) {
-          const lWrist = t?.lWrist ?? null;
-          const rWrist = t?.rWrist ?? null;
+        // Lock to whichever wrist is raised above its shoulder — no baseline needed,
+        // works even when only one wrist is visible.
+        if (isAdjustModeRef.current) {
+          const torso = torsoRef.current;
+          const lWrist = torso?.lWrist ?? null;
+          const rWrist = torso?.rWrist ?? null;
 
-          // Lock dominant wrist on first exit from deadzone — needs both wrists visible once
-          if (!lockedWristRef.current && lWrist && rWrist) {
-            const lDist = Math.hypot(lWrist.x - baseline.lWrist.x, lWrist.y - baseline.lWrist.y);
-            const rDist = Math.hypot(rWrist.x - baseline.rWrist.x, rWrist.y - baseline.rWrist.y);
-            const candidate     = lDist > rDist ? "l" : "r";
-            const candidateDisp = candidate === "l" ? lDist : rDist;
-            if (candidateDisp >= WRIST_DEADZONE) {
-              lockedWristRef.current = candidate;
-              prevWristRef.current   = null;
-            }
+          if (!lockedWristRef.current) {
+            const lRaised = lWrist && torso && lWrist.y < torso.lShoulder.y - 0.04;
+            const rRaised = rWrist && torso && rWrist.y < torso.rShoulder.y - 0.04;
+            if      (lRaised) { lockedWristRef.current = "l"; prevWristRef.current = null; }
+            else if (rRaised) { lockedWristRef.current = "r"; prevWristRef.current = null; }
           }
 
-          const locked  = lockedWristRef.current;
+          const locked   = lockedWristRef.current;
           const dominant = locked === "l" ? lWrist : locked === "r" ? rWrist : null;
-          // Once locked, only the locked wrist needs to be visible — arm can drop without killing tracking
+
           if (locked && dominant) {
             const prev = prevWristRef.current;
             if (prev) {
-              const dx = (dominant.x - prev.x) * W;
-              const dy = (dominant.y - prev.y) * H;
-              onDragRef.current(dx, dy);
+              onDragRef.current(
+                (dominant.x - prev.x) * W,
+                (dominant.y - prev.y) * H,
+              );
             }
             prevWristRef.current = dominant;
+          } else {
+            prevWristRef.current = null;
           }
         }
 

@@ -4,13 +4,19 @@ import { useEffect, useRef } from "react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const HOLD_MS = 1200; // fist must be held ~1.2s to confirm
+const HOLD_MS    = 2000; // fist must be held ~2s to confirm
+const OPEN_THRESHOLD = 3; // at least 3 fingers open before we start watching for fist
 
-/** Returns true if all four fingers are curled (fingertip y > MCP y in screen space) */
+/** Count how many fingers are extended (tip above MCP in screen space) */
+function extendedFingers(landmarks: any[]): number {
+  const tips = [8, 12, 16, 20];
+  const mcps = [5,  9, 13, 17];
+  return tips.filter((t, i) => landmarks[t].y < landmarks[mcps[i]].y).length;
+}
+
+/** All four fingers are curled */
 function isFist(landmarks: any[]): boolean {
-  const tips = [8, 12, 16, 20]; // index, middle, ring, pinky tips
-  const mcps = [5,  9, 13, 17]; // corresponding knuckles
-  return tips.every((t, i) => landmarks[t].y > landmarks[mcps[i]].y);
+  return extendedFingers(landmarks) === 0;
 }
 
 /**
@@ -32,11 +38,12 @@ export function useFistDetector(
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let rafId   = 0;
+    let rafId      = 0;
     let hands: any = null;
     let processing = false;
     let fistStart: number | null = null;
-    let fired = false;
+    let fired      = false;
+    let handWasOpen = false; // must see open hand before watching for fist
 
     function processFrame() {
       const video = videoRef.current;
@@ -76,13 +83,20 @@ export function useFistDetector(
 
         const lm = results.multiHandLandmarks[0];
 
-        if (isFist(lm)) {
+        // Require hand to be clearly open first so natural hand position
+        // doesn't accidentally trigger
+        if (extendedFingers(lm) >= OPEN_THRESHOLD) {
+          handWasOpen = true;
+        }
+
+        if (handWasOpen && isFist(lm)) {
           if (fistStart === null) fistStart = now;
           else if (!fired && now - fistStart >= HOLD_MS) {
-            fired = true;
+            fired      = true;
+            handWasOpen = false; // reset — need open hand again before next fist
             onFistRef.current();
           }
-        } else {
+        } else if (!isFist(lm)) {
           fistStart = null;
           fired     = false;
         }
