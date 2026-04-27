@@ -76,7 +76,7 @@ export default function ProductSwiper({ onTryLook }: Props) {
               alt={product.name}
               fill
               priority
-              className="object-contain object-center"
+              className="object-cover object-center"
             />
             {/* Corner sheen only — no blur */}
             <div
