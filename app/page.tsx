@@ -14,10 +14,10 @@ export default function Page() {
         className="object-cover object-center"
       />
 
-      {/* Dark gradient overlay — left-heavy as in design */}
+      {/* Dark gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/30 to-transparent" />
 
-      {/* Content wrapper — centred, max mobile width */}
+      {/* Content wrapper */}
       <div className="relative mx-auto flex min-h-dvh max-w-[403px] flex-col">
 
         {/* Title + tagline */}
@@ -36,10 +36,14 @@ export default function Page() {
           </p>
         </div>
 
-        {/* Floating polaroid images */}
+        {/* ── Polaroid cards ── */}
 
-        {/* Shoes — top-left, rotated -28° */}
+        {/* Shoes — top-left, -28° */}
         <div className="absolute left-[6%] top-[18%]">
+          {/* Tape */}
+          <div className="absolute -top-4 left-1/2 z-10 -translate-x-1/2 -rotate-[60deg]">
+            <Image src="/home/tape.png" alt="" width={72} height={28} className="opacity-80" />
+          </div>
           <div className="-rotate-[28deg]">
             <div className="rounded-[4px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "6px 6px 22px 6px" }}>
               <div className="relative h-[156px] w-[120px] overflow-hidden">
@@ -49,8 +53,12 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Jacket — right side, rotated +12° */}
+        {/* Jacket — right, +12° */}
         <div className="absolute right-[4%] top-[35%]">
+          {/* Tape */}
+          <div className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rotate-[15deg]">
+            <Image src="/home/tape.png" alt="" width={44} height={28} className="opacity-80" />
+          </div>
           <div className="rotate-12">
             <div className="rounded-[3px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "5px 5px 20px 5px" }}>
               <div className="relative h-[149px] w-[114px] overflow-hidden">
@@ -60,8 +68,12 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Floral dress — lower-centre-left, rotated -16° */}
+        {/* Dress — lower-left, -16° */}
         <div className="absolute left-[12%] top-[48%]">
+          {/* Tape */}
+          <div className="absolute -top-4 left-1/2 z-10 -translate-x-1/2 rotate-[23deg]">
+            <Image src="/home/tape.png" alt="" width={72} height={24} className="opacity-80" />
+          </div>
           <div className="-rotate-[16deg]">
             <div className="rounded-[4px] bg-white/15 backdrop-blur-md shadow-2xl" style={{ padding: "7px 7px 27px 7px" }}>
               <div className="relative h-[217px] w-[166px] overflow-hidden">
@@ -71,7 +83,7 @@ export default function Page() {
           </div>
         </div>
 
-        {/* EXPLORE FASHION button — pinned to bottom */}
+        {/* EXPLORE FASHION button */}
         <div className="mt-auto px-5 pb-10">
           <Link
             href="/looks"
