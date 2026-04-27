@@ -168,11 +168,7 @@ export default function ThreeARRenderer({
             if (prev) {
               const dx = (dominant.x - prev.x) * W;
               const dy = (dominant.y - prev.y) * H;
-              // Only fire onDrag for deliberate movements (>2px/frame) so
-              // micro-tremors don't keep resetting the 4s idle-snap timer
-              if (Math.hypot(dx, dy) > 2) {
-                onDragRef.current(dx, dy);
-              }
+              onDragRef.current(dx, dy);
             }
             prevWristRef.current = dominant;
           }

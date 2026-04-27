@@ -24,9 +24,8 @@ export default function CameraOverlay({ product, onClose }: Props) {
   const [isAdjustMode,           setIsAdjustMode]           = useState(false);
   const [showFirstGuide,         setShowFirstGuide]         = useState(false);
   const [firstGuideHasBeenShown, setFirstGuideHasBeenShown] = useState(false);
-  const [lockedToast,            setLockedToast]            = useState(false);
-  const adjustTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toastTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lockedToast,  setLockedToast] = useState(false);
+  const toastTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Lazily load MediaPipe Hands CDN (for fist detection) only while overlay is open
   useEffect(() => {
@@ -46,8 +45,7 @@ export default function CameraOverlay({ product, onClose }: Props) {
     else setCameraState("requesting");
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
-      if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
-      if (toastTimerRef.current)  clearTimeout(toastTimerRef.current);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -66,38 +64,25 @@ export default function CameraOverlay({ product, onClose }: Props) {
     }
   }
 
-  // ── Adjust-mode timer: 4 s idle → snap outfit back to body ──────
-  const startAdjustTimer = useCallback(() => {
-    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
-    adjustTimerRef.current = setTimeout(() => {
-      setIsAdjustMode(false);
-      setShowFirstGuide(false);
-      setAdjustOffset({ x: 0, y: 0 }); // always snap to auto-detected body position on idle
-    }, 4000);
-  }, []);
-
   const handleFirstOverlay = useCallback(() => {
     setShowFirstGuide(true);
     setIsAdjustMode(true);
     setFirstGuideHasBeenShown(true);
-    startAdjustTimer();
-  }, [startAdjustTimer]);
+  }, []);
 
   const handleDrag = useCallback((dx: number, dy: number) => {
     setAdjustOffset(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-    startAdjustTimer();
-  }, [startAdjustTimer]);
+    // Hide the guide hint once the user starts moving — adjust mode stays active
+    setShowFirstGuide(false);
+  }, []);
 
   const handleAdjustFit = useCallback(() => {
     setIsAdjustMode(true);
-    startAdjustTimer();
-  }, [startAdjustTimer]);
+  }, []);
 
   // ── Fist gesture: lock outfit position ──────────────────────────
   const handleFistLocked = useCallback(() => {
     if (!isAdjustMode) return;
-    // Cancel the auto-snap timer so the offset stays exactly where the user placed it
-    if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
     setIsAdjustMode(false);
     setShowFirstGuide(false);
     // Show "Position locked" toast briefly
