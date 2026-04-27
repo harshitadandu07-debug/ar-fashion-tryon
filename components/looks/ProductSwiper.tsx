@@ -64,16 +64,22 @@ export default function ProductSwiper({ onTryLook }: Props) {
             className="relative overflow-hidden rounded-[22px] border-2 border-white/80 shadow-[0_0_50px_rgba(0,0,0,0.55)]"
             style={{ height: "min(370px, 47dvh)", aspectRatio: "291 / 401" }}
           >
-            {/* Frosted inner gradient */}
-            <div className="absolute inset-0 z-10 rounded-[22px] backdrop-blur-[10px]"
-                 style={{ background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)" }} />
-
-            {/* Product image */}
-            <div className="relative h-full w-full">
-              <Image src={product.imagePath} alt={product.name} fill className="object-contain object-center" priority />
+            {/* Product image — z-10 so it sits above the edge overlays */}
+            <div className="relative z-10 flex h-full w-full items-center justify-center">
+              <Image
+                src={product.imagePath}
+                alt={product.name}
+                fill
+                className="object-contain"
+                style={{ objectPosition: "center center" }}
+                priority
+              />
             </div>
 
-            <div className="pointer-events-none absolute inset-[-2px] z-10 rounded-[inherit] shadow-[inset_-5px_-5px_250px_0px_rgba(255,255,255,0.04)]" />
+            {/* Subtle corner highlight — no blur so it never fogs the image */}
+            <div className="pointer-events-none absolute inset-0 z-20 rounded-[22px]"
+                 style={{ background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 55%)" }} />
+            <div className="pointer-events-none absolute inset-[-2px] z-20 rounded-[inherit] shadow-[inset_-5px_-5px_250px_0px_rgba(255,255,255,0.04)]" />
           </div>
 
           {/* Season + name */}
