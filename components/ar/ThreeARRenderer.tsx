@@ -216,8 +216,8 @@ export default function ThreeARRenderer({
                     <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <polyline points="18,15 12,9 6,15" />
                     </svg>
-                    {/* Raised-hand emoji — clearly signals "show your palm" */}
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-3xl">
+                    {/* Mirrored hand — matches front-camera view */}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-3xl" style={{ transform: "scaleX(-1)" }}>
                       ✋
                     </div>
                     <svg className="h-5 w-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -228,10 +228,6 @@ export default function ThreeARRenderer({
                     <polyline points="9,18 15,12 9,6" />
                   </svg>
                 </div>
-                <div className="rounded-full bg-black/60 px-4 py-1.5 backdrop-blur-sm">
-                  <span className="text-xs font-semibold text-white">Raise your palm &amp; move to adjust</span>
-                </div>
-                <span className="text-[10px] text-white/45">Dismisses automatically</span>
               </div>
             </div>
           )}
