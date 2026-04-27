@@ -151,7 +151,7 @@ export function useGarmentScene(): {
       garmentGrp.position.x += adjustOffset.x;
       garmentGrp.position.y -= adjustOffset.y;
     }
-    garmentGrp.rotation.z  = t.rotationZ;
+    garmentGrp.rotation.z  = 0; // keep garment upright regardless of shoulder tilt
     garmentGrp.scale.setScalar(scale);
 
     const alpha = Math.min(1, (conf - 0.55) / 0.15 + 0.7);
