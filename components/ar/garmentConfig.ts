@@ -60,7 +60,7 @@ export const GARMENT_CONFIGS: Record<number, GarmentConfig> = {
     modelPath:         "/models/dress.glb",
     garmentType:       "full",
     widthMultiplier3d: 1.6,
-    yOffset3d:         0,
+    yOffset3d:         -150, // px: move dress down so it starts from shoulders
     anchors:           DEFAULT_ANCHORS,
     calibration:       DEFAULT_CALIBRATION,
   },

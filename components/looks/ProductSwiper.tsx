@@ -8,7 +8,7 @@ type Product = {
   name:      string;
   season:    string;
   imagePath: string;
-  bgPath:    string;
+  gradient:  string;
 };
 
 const PRODUCTS: Product[] = [
@@ -17,14 +17,14 @@ const PRODUCTS: Product[] = [
     name:      "Mode Sportif",
     season:    "SPRING 2026",
     imagePath: "/products/product1.png",
-    bgPath:    "/products/bg1.jpg",
+    gradient:  "radial-gradient(ellipse at 20% 80%, #3b1f6e 0%, #0a0a14 55%), radial-gradient(ellipse at 80% 20%, #1a0f3d 0%, transparent 60%)",
   },
   {
     id:        2,
     name:      "Tiered Dresses",
     season:    "SPRING 2026",
     imagePath: "/products/product2.png",
-    bgPath:    "/products/bg2.jpg",
+    gradient:  "radial-gradient(ellipse at 25% 75%, #5c1a3a 0%, #0a0a14 55%), radial-gradient(ellipse at 75% 25%, #1f0d3b 0%, transparent 60%)",
   },
 ];
 
@@ -41,28 +41,29 @@ export default function ProductSwiper({ onTryLook }: Props) {
   const product = PRODUCTS[index];
 
   return (
-    <div className="relative flex h-dvh w-full flex-col items-center overflow-hidden bg-black">
+    <div className="relative flex h-dvh w-full flex-col items-center overflow-hidden">
 
-      {/* Background image */}
-      <Image
-        key={product.bgPath}
-        src={product.bgPath}
-        alt=""
-        fill
-        priority
-        className="object-cover object-center"
-      />
+      {/* Gradient background */}
+      <div className="absolute inset-0" style={{ background: product.gradient }} />
+
+      {/* Noise grain overlay */}
+      <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.18]" aria-hidden="true">
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+      </svg>
 
       {/* Phone mockup — centred, upper half */}
       <div className="relative z-10 mx-auto mt-[10%] flex flex-col items-center">
 
         {/* Frosted glass phone frame */}
         <div className="relative h-[401px] w-[291px] overflow-hidden rounded-[24px] border-2 border-white/80 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-          {/* Frosted glass inner gradient */}
-          <div className="absolute inset-0 rounded-[24px] backdrop-blur-[21px]"
-            style={{
-              background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)",
-            }}
+          {/* Frosted inner gradient */}
+          <div
+            className="absolute inset-0 rounded-[24px] backdrop-blur-[21px]"
+            style={{ background: "radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%)" }}
           />
           {/* Product image */}
           <div className="relative h-full w-full">
@@ -75,7 +76,7 @@ export default function ProductSwiper({ onTryLook }: Props) {
               priority
             />
           </div>
-          {/* Inner edge highlight */}
+          {/* Inner edge shine */}
           <div className="pointer-events-none absolute inset-[-2px] rounded-[inherit] shadow-[inset_-5px_-5px_250px_0px_rgba(255,255,255,0.04)]" />
         </div>
 
@@ -95,33 +96,24 @@ export default function ProductSwiper({ onTryLook }: Props) {
       </div>
 
       {/* Prev / Next arrows */}
-      <button
-        onClick={prev}
-        aria-label="Previous look"
-        className="absolute left-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm"
-      >
+      <button onClick={prev} aria-label="Previous look"
+        className="absolute left-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">
         ‹
       </button>
-      <button
-        onClick={next}
-        aria-label="Next look"
-        className="absolute right-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm"
-      >
+      <button onClick={next} aria-label="Next look"
+        className="absolute right-4 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur-sm">
         ›
       </button>
 
       {/* Dot indicator */}
       <div className="absolute bottom-28 z-10 flex gap-2">
         {PRODUCTS.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setIndex(i)}
-            className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/40"}`}
-          />
+          <button key={i} onClick={() => setIndex(i)}
+            className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/40"}`} />
         ))}
       </div>
 
-      {/* EXPLORE FASHION / Try the look button */}
+      {/* EXPLORE FASHION button */}
       <div className="absolute bottom-8 z-10 w-[calc(100%-64px)]">
         <button
           onClick={() => onTryLook(product.id)}
