@@ -64,8 +64,12 @@ export default function CameraOverlay({ product, onClose }: Props) {
     if (adjustTimerRef.current) clearTimeout(adjustTimerRef.current);
     adjustTimerRef.current = setTimeout(() => {
       setIsAdjustMode(false);
-      setShowFirstGuide(false);
-    }, 3000);
+      // If the first-time guide was still showing, snap garment back to auto-detected body position
+      setShowFirstGuide((wasShowing) => {
+        if (wasShowing) setAdjustOffset({ x: 0, y: 0 });
+        return false;
+      });
+    }, 4000);
   }, []);
 
   const handleFirstOverlay = useCallback(() => {
@@ -166,11 +170,6 @@ export default function CameraOverlay({ product, onClose }: Props) {
           onFirstOverlay={handleFirstOverlay}
         />
       )}
-
-      {/* Status pill */}
-      <div className="absolute left-4 top-14 z-20 max-w-[60vw] truncate rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
-        {mpStatus}
-      </div>
 
       {/* Close button */}
       <button

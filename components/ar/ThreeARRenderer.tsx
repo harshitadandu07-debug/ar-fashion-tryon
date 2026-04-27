@@ -232,11 +232,6 @@ export default function ThreeARRenderer({
             </div>
           )}
 
-          {isAdjustMode && !showFirstGuide && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 backdrop-blur-sm pointer-events-none">
-              <span className="text-xs text-white/80">Move your arm to reposition</span>
-            </div>
-          )}
         </div>
       )}
 
