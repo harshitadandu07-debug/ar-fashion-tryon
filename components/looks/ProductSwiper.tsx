@@ -122,7 +122,7 @@ export default function ProductSwiper({ onTryLook }: Props) {
               className="text-[20px] font-bold tracking-wide text-white"
               style={{ fontFamily: "var(--font-hanken), sans-serif" }}
             >
-              Try this look
+              TRY THIS LOOK
             </span>
           </button>
         </div>
