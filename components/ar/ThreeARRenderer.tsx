@@ -1,7 +1,7 @@
 // components/ar/ThreeARRenderer.tsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import type { Product } from "@/components/ui/ProductCard";
 import { usePoseTorso } from "@/components/ar/usePoseTorso";
 import type { TorsoPoint } from "@/components/ar/usePoseTorso";
@@ -22,11 +22,19 @@ type Props = {
   onFirstOverlay: () => void;
 };
 
-export default function ThreeARRenderer({
+export type ThreeARRendererHandle = {
+  captureFrame: () => HTMLCanvasElement | null;
+};
+
+const ThreeARRenderer = forwardRef<ThreeARRendererHandle, Props>(function ThreeARRenderer({
   videoRef, product, onStatus,
   adjustOffset, isAdjustMode, showFirstGuide, onDrag, onFirstOverlay,
-}: Props) {
+}, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    captureFrame: () => canvasRef.current,
+  }));
 
   const onStatusRef = useRef(onStatus);
   useEffect(() => { onStatusRef.current = onStatus; }, [onStatus]);
@@ -230,4 +238,6 @@ export default function ThreeARRenderer({
       )}
     </>
   );
-}
+});
+
+export default ThreeARRenderer;

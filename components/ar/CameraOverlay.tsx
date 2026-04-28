@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import ThreeARRenderer from "@/components/ar/ThreeARRenderer";
+import ThreeARRenderer, { type ThreeARRendererHandle } from "@/components/ar/ThreeARRenderer";
 import { useFistDetector } from "@/components/ar/useFistDetector";
 import type { Product } from "@/components/ui/ProductCard";
 
@@ -15,8 +15,9 @@ type Props = {
 type CameraState = "checking" | "requesting" | "granted" | "denied";
 
 export default function CameraOverlay({ product, onClose }: Props) {
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const videoRef      = useRef<HTMLVideoElement>(null);
+  const streamRef     = useRef<MediaStream | null>(null);
+  const rendererRef   = useRef<ThreeARRendererHandle>(null);
 
   const [cameraState, setCameraState] = useState<CameraState>("checking");
 
@@ -85,10 +86,37 @@ export default function CameraOverlay({ product, onClose }: Props) {
     if (!isAdjustMode) return;
     setIsAdjustMode(false);
     setShowFirstGuide(false);
-    // Show "Position locked" toast briefly
+
+    // Capture and save the current AR frame
+    const canvas = rendererRef.current?.captureFrame();
+    if (canvas) {
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const filename = `stylecast-${Date.now()}.png`;
+        const file = new File([blob], filename, { type: "image/png" });
+
+        if (navigator.canShare?.({ files: [file] })) {
+          // Native share sheet — user can save to Photos on iOS/Android
+          try {
+            await navigator.share({ files: [file], title: "My StyleCast Look" });
+          } catch {
+            // User cancelled — that's fine
+          }
+        } else {
+          // Fallback: trigger download
+          const url = URL.createObjectURL(blob);
+          const a   = document.createElement("a");
+          a.href     = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      }, "image/png");
+    }
+
     setLockedToast(true);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setLockedToast(false), 2000);
+    toastTimerRef.current = setTimeout(() => setLockedToast(false), 2500);
   }, [isAdjustMode]);
 
   useFistDetector(videoRef, handleFistLocked, isAdjustMode);
@@ -134,6 +162,7 @@ export default function CameraOverlay({ product, onClose }: Props) {
 
       {cameraState === "granted" && (
         <ThreeARRenderer
+          ref={rendererRef}
           videoRef={videoRef}
           product={product}
           onStatus={() => {}}
@@ -168,7 +197,7 @@ export default function CameraOverlay({ product, onClose }: Props) {
       {/* "Position locked" toast */}
       {lockedToast && (
         <div className="absolute bottom-8 left-1/2 z-30 -translate-x-1/2 rounded-full bg-white/20 px-5 py-2 backdrop-blur-md">
-          <span className="text-sm font-semibold text-white">✓ Position locked</span>
+          <span className="text-sm font-semibold text-white">✓ Saved to gallery</span>
         </div>
       )}
     </div>
